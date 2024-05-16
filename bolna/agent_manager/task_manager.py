@@ -442,9 +442,9 @@ class TaskManager(BaseManager):
             elif text_chunk[-4:].lower() == "user":
                 text_chunk = text_chunk[:-4]
 
-        index = text_chunk.find("AI")
-        if index != -1:
-            text_chunk = text_chunk[index+2:]
+        # index = text_chunk.find("AI")
+        # if index != -1:
+        #     text_chunk = text_chunk[index+2:]
         return text_chunk
     
     async def process_interruption(self):
@@ -460,6 +460,19 @@ class TaskManager(BaseManager):
             logger.info(f"Cancelling LLM Task")
             self.llm_task.cancel()
             self.llm_task = None
+
+        
+        if self.first_message_task is not None:
+            logger.info("Cancelling first message task")
+            self.first_message_task.cancel()
+            self.first_message_task = None
+
+        # self.synthesizer_task.cancel()
+        # self.synthesizer_task = asyncio.create_task(self.__listen_synthesizer())
+        for task in self.synthesizer_tasks:
+            task.cancel()
+
+
         
         if self.first_message_task is not None:
             logger.info("Cancelling first message task")
@@ -594,6 +607,7 @@ class TaskManager(BaseManager):
         log['component'] = component
         log['sequence_id'] = meta_info['sequence_id']
         log['model'] = model
+        log['cached'] = is_cached
         if component == "transcriber":
             if 'is_final' in meta_info and meta_info['is_final']:
                 log['is_final'] = True
@@ -626,24 +640,27 @@ class TaskManager(BaseManager):
             self.interim_history.append({'role': 'user', 'content': message['data']})
             logger.info(f"Starting LLM Agent {self.interim_history}")
             #Expose get current classification_response method from the agent class and use it for the response log
-            self.__convert_to_request_log(message = format_messages(self.interim_history, use_system_prompt= True), meta_info= meta_info, component="llm", direction="request", model=self.task_config["tools_config"]["llm_agent"]["classification_model"])
-            async for text_chunk in self.tools['llm_agent'].generate(self.interim_history, stream=True, synthesize=True,
-                                                                     label_flow=self.label_flow):
-                if text_chunk == "<end_of_conversation>":
+
+            self.__convert_to_request_log(message = format_messages(messages, use_system_prompt= True), meta_info= meta_info, component="llm", direction="request", model=self.task_config["tools_config"]["llm_agent"]["model"], is_cached= True)
+            async for next_state in self.tools['llm_agent'].generate(messages, label_flow=self.label_flow):
+                if next_state == "<end_of_conversation>":
+
                     meta_info["end_of_conversation"] = True
                     self.buffered_output_queue.put_nowait(create_ws_data_packet("<end_of_conversation>", meta_info))
                     return
                 
-                logger.info(f"Text chunk {text_chunk} callee speaking {self.callee_speaking}")
-                if is_valid_md5(text_chunk):
-                    self.synthesizer_tasks.append(asyncio.create_task(
-                        self._synthesize(create_ws_data_packet(text_chunk, meta_info, is_md5_hash=True))))
-                else:
-                    self.synthesizer_tasks.append(asyncio.create_task(
-                        self._synthesize(create_ws_data_packet(text_chunk, meta_info, is_md5_hash=False))))
-            
-            logger.info(f"Interim history after the LLM task {self.interim_history}")
-            self.__update_transcripts()
+
+                logger.info(f"Text chunk {next_state['text']}")
+                messages.append({'role': 'assistant', 'content': next_state['text']})
+                self.synthesizer_tasks.append(asyncio.create_task(
+                        self._synthesize(create_ws_data_packet(next_state['audio'], meta_info, is_md5_hash=True))))
+            logger.info(f"Interim history after the LLM task {messages}")
+            self.llm_response_generated = True
+            self.interim_history = copy.deepcopy(messages)
+            if self.callee_silent:
+                logger.info("When we got utterance end, maybe LLM was still generating response. So, copying into history")
+                self.history = copy.deepcopy(self.interim_history)
+
 
     async def _process_conversation_formulaic_task(self, message, sequence, meta_info):
         start_time = time.time()
@@ -719,6 +736,7 @@ class TaskManager(BaseManager):
                 text_chunk, end_of_llm_stream = llm_message
                 logger.info(f"###### time to get the first chunk {time.time() - start_time} {text_chunk}")
                 llm_response += " " + text_chunk
+                logger.info(f"Got a response from LLM {llm_response}")
                 if self.stream:
                     if end_of_llm_stream:
                         meta_info["end_of_llm_stream"] = True
@@ -840,7 +858,7 @@ class TaskManager(BaseManager):
                 if message["data"].strip() == "":
                     continue
                 if message['data'] == "transcriber_connection_closed":
-                    self.transcriber_duration += message['meta_info']["transcriber_duration"]
+                    self.transcriber_duration += message['meta_info']["transcriber_duration"] if message['meta_info'] is not None else 0
                     logger.info("transcriber connection closed")
                     break
                 
