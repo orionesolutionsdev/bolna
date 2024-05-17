@@ -50,7 +50,7 @@ async def create_agent(agent_data: CreateAgentPayload):
         for index, task in enumerate(data_for_db['tasks']):
             if task['task_type'] == "extraction":
                 extraction_prompt_llm = os.getenv("EXTRACTION_PROMPT_GENERATION_MODEL")
-                extraction_prompt_generation_llm = LiteLLM(streaming_model=extraction_prompt_llm, max_tokens=2000)
+                extraction_prompt_generation_llm = LiteLLM(model=extraction_prompt_llm, max_tokens=2000)
                 extraction_prompt = await extraction_prompt_generation_llm.generate(
                     messages=[
                         {'role': 'system', 'content': EXTRACTION_PROMPT_GENERATION_PROMPT},
@@ -112,6 +112,97 @@ async def update_agent(agent_id: str, agent_data: AgentModel):
             return JSONResponse(content={"message": "Agent not found"}, status_code=404)
     except Exception as e:
         return JSONResponse(content={"message": str(e)}, status_code=500)
+
+
+
+# Define the voice model
+class Voice(BaseModel):
+    provider: str
+    name: str
+    model: str
+    id: str
+    languageCode: str
+    accent: str
+    lowLatency: bool
+
+# Initial voices data
+voices = [
+    # Voice(provider="polly", name="Matthew", model="generative", id="Matthew", languageCode="en-US", accent="United States (English) (american)", lowLatency=True),
+    # Voice(provider="polly", name="Danielle", model="neural", id="Danielle", languageCode="en-US", accent="United States (English) (american)", lowLatency=True),
+    # Voice(provider="polly", name="Gregory", model="neural", id="Gregory", languageCode="en-US", accent="United States (English) (american)", lowLatency=True),
+    # Voice(provider="polly", name="Kajal", model="neural", id="Kajal", languageCode="en-IN", accent="Indian", lowLatency=True),
+    # Voice(provider="polly", name="Arthur", model="neural", id="Arthur", languageCode="en-GB", accent="British", lowLatency=True),
+    # Voice(provider="polly", name="Olivia", model="neural", id="Olivia", languageCode="en-AU", accent="Australian", lowLatency=True),
+    Voice(provider="elevenlabs", name="Vikram", model="eleven_multilingual_v2", id="elaXKhiKoWZo6xP9iPob", languageCode="all", accent="indian", lowLatency=False),
+    Voice(provider="elevenlabs", name="Wendy", model="eleven_multilingual_v2", id="rQLJY7vvMTTC7a3CRh5M", languageCode="all", accent="american", lowLatency=False),
+    Voice(provider="elevenlabs", name="Ellie", model="eleven_multilingual_v2", id="4upRWoWGNrknWYN6YMHJ", languageCode="all", accent="american", lowLatency=False),
+    Voice(provider="elevenlabs", name="Sheps Rocky", model="eleven_multilingual_v2", id="d5xU2Rwln0n15oHMmaTU", languageCode="all", accent="american", lowLatency=False),
+    Voice(provider="elevenlabs", name="Adrianna", model="eleven_multilingual_v2", id="lbdM5yk6tkX9B7bLVf5d", languageCode="all", accent="australian", lowLatency=False),
+]
+
+@app.get("/voices", response_model=List[Voice])
+def get_voices():
+    return voices
+
+@app.get("/voices/{voice_id}", response_model=Voice)
+def get_voice(voice_id: str):
+    voice = next((voice for voice in voices if voice.id == voice_id), None)
+    if voice is None:
+        raise HTTPException(status_code=404, detail="Voice not found")
+    return voice
+
+
+
+class LLMModel(BaseModel):
+    library: str
+    languages: str
+    provider: str
+    deprecated: bool
+    base_url: Optional[str] = None
+    json_mode: str
+    model: str
+    display_name: str
+    family: str
+
+# Initial LLM models data with updated base_url and provider for non-openai models
+llm_models = [
+    LLMModel(library="openai", languages="en", provider="groq", deprecated=False, base_url="https://api.groq.com/openai/v1", json_mode="no", model="groq/meta-llama/Meta-Llama-3-70B-Instruct", display_name="Meta Llama 3 70B instruct", family="llama"),
+    LLMModel(library="openai", languages="en", provider="groq", deprecated=False, base_url="https://api.groq.com/openai/v1", json_mode="no", model="groq/microsoft/WizardLM-2-8x22B", display_name="Wizard LM 8x22B", family="mistral"),
+    LLMModel(library="openai", languages="en", provider="groq", deprecated=False, base_url="https://api.groq.com/openai/v1", json_mode="no", model="groq/databricks/dbrx-instruct", display_name="DBRX", family="mistral"),
+    LLMModel(library="openai", languages="en", provider="groq", deprecated=False, base_url="https://api.groq.com/openai/v1", json_mode="no", model="groq/mistralai/Mixtral-8x22B-Instruct-v0.1", display_name="Mixtral 8x22B", family="mistral"),
+    LLMModel(library="openai", languages="en", provider="groq", deprecated=False, base_url="https://api.groq.com/openai/v1", json_mode="no", model="groq/meta-llama/Meta-Llama-3-8B-Instruct", display_name="Meta Llama 3 8B instruct", family="llama"),
+    LLMModel(library="litellm", languages="en", provider="groq", deprecated=False, base_url="https://api.groq.com/openai/v1", json_mode="no", model="groq/HuggingFaceH4/zephyr-orpo-141b-A35b-v0.1", display_name="HuggingFaceH4/zephyr-orpo-141b-A35b-v0.1 [Mixtral 8x22 finetune]", family="mixtral"),
+    LLMModel(library="openai", languages="en", provider="groq", deprecated=False, base_url="https://api.groq.com/openai/v1", json_mode="no", model="groq/hermes-2-pro-mistral-7b", display_name="Hermes 2 Mistral", family="mistral"),
+    LLMModel(library="litellm", languages="en", provider="groq", deprecated=False, json_mode="No", model="groq/HuggingFaceH4/zephyr-7b-beta", display_name="zephyr-7b-beta", family="zephyr"),
+    LLMModel(library="litellm", languages="en", provider="groq", deprecated=False, base_url="https://api.groq.com/openai/v1", json_mode="No", model="groq/gemma-7b-it", display_name="gemma-7b", family="gemma"),
+    LLMModel(library="litellm", languages="en", provider="groq", deprecated=False, json_mode="No", model="groq/meta-llama/Llama-2-7b-chat-hf", display_name="Llama-2-7b-chat", family="llama"),
+    LLMModel(library="litellm", languages="en", provider="groq", deprecated=False, json_mode="No", model="groq/meta-llama/Llama-2-13b-chat-hf", display_name="Llama-2-13b-chat", family="llama"),
+    LLMModel(library="litellm", languages="en", provider="groq", deprecated=False, json_mode="No", model="groq/llama-2-70b-chat", display_name="llama-2-70b-chat", family="llama"),
+    LLMModel(library="litellm", languages="en", provider="groq", deprecated=False, json_mode="No", model="groq/Open-Orca/Mistral-7B-OpenOrca", display_name="Mistral-7B-OpenOrca", family="mistral"),
+    LLMModel(library="litellm", languages="en", provider="groq", deprecated=False, json_mode="Yes", model="groq/mixtral-8x7b-instruct", display_name="mixtral-8x7b-instruct (Perplexity)", family="mistral"),
+    LLMModel(library="openai", languages="en,hi,gu,fr,it,es", provider="openai", deprecated=False, json_mode="Yes", model="gpt-3.5-turbo-1106", display_name="gpt-3.5-turbo-1106", family="openai"),
+    LLMModel(library="openai", languages="en,hi,gu,fr,it,es", provider="openai", deprecated=False, json_mode="No", model="gpt-3.5-turbo", display_name="gpt-3.5-turbo", family="openai"),
+    LLMModel(library="openai", languages="en,hi,gu,fr,it,es", provider="openai", deprecated=False, json_mode="No", model="gpt-4o", display_name="gpt-4o", family="openai"),
+    LLMModel(library="openai", languages="en,hi,gu,fr,it,es", provider="openai", deprecated=False, json_mode="No", model="gpt-4", display_name="gpt-4", family="openai"),
+    LLMModel(library="openai", languages="en,hi,gu,fr,it,es", provider="openai", deprecated=False, json_mode="No", model="gpt-4-32k", display_name="gpt-4-32k", family="openai"),
+    LLMModel(library="openai", languages="en,hi,gu,fr,it,es", provider="openai", deprecated=False, json_mode="Yes", model="gpt-4-1106-preview", display_name="gpt-4-1106-preview", family="openai"),
+    # LLMModel(library="litellm", languages="en", provider="groq", deprecated=False, json_mode="no", model="groq/sonar-medium-chat", display_name="Perplexity Sonar medium", family="perplexity"),
+    # LLMModel(library="litellm", languages="en", provider="groq", deprecated=False, json_mode="no", model="groq/sonar-small-chat", display_name="Perplexity Sonar small", family="perplexity"),
+    # LLMModel(library="litellm", languages="en", provider="groq", deprecated=False, base_url="https://api.groq.com/openai/v1", json_mode="no", model="groq/cognitivecomputations/dolphin-2.6-mixtral-8x7b", display_name="dolphin-2.6-mixtral-8x7b", family="mixtral"),
+    # LLMModel(library="azure", languages="en,hi,gu,fr,it,es", provider="azure", deprecated=False, base_url="https://bolna-openai-call.openai.azure.com", json_mode="no", model="azure/bolna-deployment", display_name="azure-openai", family="azure-openai")
+]
+
+@app.get("/llm_models", response_model=List[LLMModel])
+def get_llm_models():
+    return llm_models
+
+
+@app.get("/llm_models/{model_name}", response_model=LLMModel)
+def get_llm_model(model_name: str):
+    model = next((model for model in llm_models if model.model == model_name), None)
+    if model is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+    return model
 
 ############################################################################################# 
 # Websocket 
