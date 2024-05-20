@@ -1,6 +1,7 @@
 version: '3'
 services:
   twilio-app:
+    image: twilio-app:latest
     build:
       context: .
       dockerfile: dockerfiles/twilio_server.Dockerfile
@@ -12,6 +13,7 @@ services:
       - .env
 
   bolna-app:
+    image: bolna-app:latest
     build:
       context: .
       dockerfile: dockerfiles/bolna_server.Dockerfile
@@ -35,11 +37,11 @@ services:
             - telephony_server/
             - dockerfile/
 
-            
+
   redis:
-    image: "redis:latest"
-    #ports:
-     # - "6379:6379"
+    image: redis:latest
+    ports:
+      - "6379:6379"
 
   ngrok:
     image: ngrok/ngrok:latest

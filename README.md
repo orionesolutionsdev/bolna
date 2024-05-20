@@ -52,7 +52,9 @@ The setup consists of four containers:
 3. `ngrok`: for tunneling. One will need to add the `authtoken` to `ngrok-config.yml`
 4. `redis`: for persisting agents & prompt data
 
-Running `docker-compose up --build` will use the `.env` as the environment file.
+Use docker to build the images using `.env` file as the environment file and run them locally
+1. `docker-compose build --no-cache`: rebuild images
+2. `docker-compose up`: run the build images
 
 Once the docker containers are up, you can now start to create your agents and instruct them to initiate calls.
 
@@ -170,8 +172,9 @@ These are the current supported LLM Provider Family:
 https://github.com/bolna-ai/bolna/blob/c8a0d1428793d4df29133119e354bc2f85a7ca76/bolna/providers.py#L19-L28
 
 For LiteLLM based LLMs, add either of the following to the `.env` file depending on your use-case:<br><br>
-`LITELLM_MODEL_API_BASE`: API Key of the LLM<br>
-`LITELLM_MODEL_API_BASE`: URL of the hosted LLM
+`LITELLM_MODEL_API_KEY`: API Key of the LLM<br>
+`LITELLM_MODEL_API_BASE`: URL of the hosted LLM<br>
+`LITELLM_MODEL_API_VERSION`: API VERSION for LLMs like Azure
 
 For LLMs hosted via VLLM, add the following to the `.env` file:<br>
 `VLLM_SERVER_BASE_URL`: URL of the hosted LLM using VLLM
