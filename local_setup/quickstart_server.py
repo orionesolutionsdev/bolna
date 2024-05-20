@@ -189,7 +189,6 @@ llm_models = [
     # LLMModel(library="litellm", languages="en", provider="groq", deprecated=False, json_mode="no", model="groq/sonar-medium-chat", display_name="Perplexity Sonar medium", family="perplexity"),
     # LLMModel(library="litellm", languages="en", provider="groq", deprecated=False, json_mode="no", model="groq/sonar-small-chat", display_name="Perplexity Sonar small", family="perplexity"),
     # LLMModel(library="litellm", languages="en", provider="groq", deprecated=False, base_url="https://api.groq.com/openai/v1", json_mode="no", model="groq/cognitivecomputations/dolphin-2.6-mixtral-8x7b", display_name="dolphin-2.6-mixtral-8x7b", family="mixtral"),
-    # LLMModel(library="azure", languages="en,hi,gu,fr,it,es", provider="azure", deprecated=False, base_url="https://bolna-openai-call.openai.azure.com", json_mode="no", model="azure/bolna-deployment", display_name="azure-openai", family="azure-openai")
 ]
 
 @app.get("/llm_models", response_model=List[LLMModel])
