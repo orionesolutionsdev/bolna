@@ -6,6 +6,8 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Quer
 from fastapi.middleware.cors import CORSMiddleware
 import redis.asyncio as redis
 from dotenv import load_dotenv
+from pymongo import MongoClient
+from datetime import datetime
 from bolna.helpers.utils import store_file
 from bolna.prompts import *
 from bolna.helpers.logger_config import configure_logger
@@ -16,6 +18,8 @@ from fastapi.responses import JSONResponse
 
 load_dotenv()
 logger = configure_logger(__name__)
+mongo_client = MongoClient(os.getenv('MONGO_URL'))
+db = mongo_client["bolna"]
 
 redis_pool = redis.ConnectionPool.from_url(os.getenv('REDIS_URL'), decode_responses=True)
 redis_client = redis.Redis.from_pool(redis_pool)
@@ -63,35 +67,34 @@ async def create_agent(agent_data: CreateAgentPayload):
         redis_client.set(agent_uuid, json.dumps(data_for_db)),
         store_file(file_key=stored_prompt_file_path, file_data=agent_prompts, local=True)
     )
+    data_for_db['created_at'] = datetime.now().isoformat()
+    data_for_db['agent_id'] = agent_uuid
+    mongo_client['bolna'].agents.insert_one(data_for_db)
 
     return {"agent_id": agent_uuid, "state": "created"}
 
+
 @app.get("/agent/all")
 async def get_all_agents():
-    agent_ids = await redis_client.keys()
     agents_data = []
+    agent_ids = db['agents'].distinct('agent_id')
     for agent_id in agent_ids:
-        agent_config = await redis_client.get(agent_id)
+        agent_config = db['agents'].find_one({"agent_id": agent_id}, {'_id':0, 'agent_id':0})
         if agent_config:
-            agent_config = json.loads(agent_config)
-            agent_name = agent_config.get("agent_name")
-            if agent_name:
-                agent_data = {
-                    "agent_id": agent_id,
-                    "agent_config": agent_config
-                }
-                agents_data.append(agent_data)
-    return JSONResponse(content=agents_data, status_code=200)
+            agent_data = {
+                "agent_id": agent_id,
+                "agent_config": agent_config
+            }
+            agents_data.append(agent_data)
+    return JSONResponse(content= agents_data, status_code=200)
 
 
 @app.get("/agent/{agent_id}")
 async def get_agent(agent_id: str):
     try:
-        print(redis_client.keys())
-        retrieved_agent_config = await redis_client.get(agent_id)
-        if retrieved_agent_config:
-            agent_config = json.loads(retrieved_agent_config)
-            return JSONResponse(content=agent_config, status_code=200)
+        agent_data = db['agents'].find_one({"agent_id": agent_id}, {'_id':0, 'agent_id':0})
+        if agent_data:
+            return JSONResponse(content=agent_data, status_code=200)
         else:
             return JSONResponse(content={"message": "Agent not found"}, status_code=404)
     except Exception as e:
@@ -102,11 +105,10 @@ async def get_agent(agent_id: str):
 @app.put("/agent/{agent_id}")
 async def update_agent(agent_id: str, agent_data: AgentModel):
     try:
-        retrieved_agent_config = await redis_client.get(agent_id)
-        if retrieved_agent_config:
-            agent_config = json.loads(retrieved_agent_config)
+        agent_config = db['agents'].find_one({"agent_id": agent_id})
+        if agent_config:
             agent_config.update({key: value for key, value in agent_data.model_dump().items()})
-            await redis_client.set(agent_id, json.dumps(dict(agent_config)))
+            db['agents'].update_one({"agent_id": agent_id}, {"$set": agent_config})
             return JSONResponse(content={"message": "Agent updated successfully"}, status_code=200)
         else:
             return JSONResponse(content={"message": "Agent not found"}, status_code=404)
@@ -213,10 +215,10 @@ async def websocket_endpoint(agent_id: str, websocket: WebSocket, user_agent: st
     active_websockets.append(websocket)
     agent_config, context_data = None, None
     try:
-        retrieved_agent_config = await redis_client.get(agent_id)
+        agent_config = db['agents'].find_one({"agent_id": agent_id}, {'_id':0, 'agent_id':0})
         logger.info(
-            f"Retrieved agent config: {retrieved_agent_config}")
-        agent_config = json.loads(retrieved_agent_config)
+            f"Retrieved agent config: {agent_config}")
+        # agent_config = json.loads(retrieved_agent_config)
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=404, detail="Agent not found")
@@ -231,3 +233,53 @@ async def websocket_endpoint(agent_id: str, websocket: WebSocket, user_agent: st
     except Exception as e:
         traceback.print_exc()
         logger.error(f"error in executing {e}")
+
+
+################################################################
+# Redis Based Implementation for Agents
+
+# @app.get("/agent/all")
+# async def get_all_agents():
+#     agent_ids = await redis_client.keys()
+#     agents_data = []
+#     for agent_id in agent_ids:
+#         agent_config = await redis_client.get(agent_id)
+#         if agent_config:
+#             agent_config = json.loads(agent_config)
+#             agent_name = agent_config.get("agent_name")
+#             if agent_name:
+#                 agent_data = {
+#                     "agent_id": agent_id,
+#                     "agent_config": agent_config
+#                 }
+#                 agents_data.append(agent_data)
+#     return JSONResponse(content=agents_data, status_code=200)
+
+# @app.get("/agent/{agent_id}")
+# async def get_agent(agent_id: str):
+#     try:
+#         print(redis_client.keys())
+#         retrieved_agent_config = await redis_client.get(agent_id)
+#         if retrieved_agent_config:
+#             agent_config = json.loads(retrieved_agent_config)
+#             return JSONResponse(content=agent_config, status_code=200)
+#         else:
+#             return JSONResponse(content={"message": "Agent not found"}, status_code=404)
+#     except Exception as e:
+#         return JSONResponse(content={"message": str(e)}, status_code=500)
+
+
+# @app.put("/agent/{agent_id}")
+# async def update_agent(agent_id: str, agent_data: AgentModel):
+#     try:
+#         retrieved_agent_config = await redis_client.get(agent_id)
+#         if retrieved_agent_config:
+#             agent_config = json.loads(retrieved_agent_config)
+#             agent_config.update({key: value for key, value in agent_data.model_dump().items()})
+#             await redis_client.set(agent_id, json.dumps(dict(agent_config)))
+#             return JSONResponse(content={"message": "Agent updated successfully"}, status_code=200)
+#         else:
+#             return JSONResponse(content={"message": "Agent not found"}, status_code=404)
+#     except Exception as e:
+#         return JSONResponse(content={"message": str(e)}, status_code=500)
+
