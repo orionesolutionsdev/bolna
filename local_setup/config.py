@@ -18,8 +18,8 @@ class Settings(BaseSettings):
     REDIS_URL: str
     TTS_WS: str
     ELEVENLABS_API_KEY: str
-    LITELLM_MODEL_API_KEY :str
-    LITELLM_MODEL_API_BASE : str
+    # LITELLM_MODEL_API_KEY :str
+    # LITELLM_MODEL_API_BASE : str
     MONGO_DATABASE: str
     MONGO_COLLECTION : str
     model_config = SettingsConfigDict(env_file=".env")

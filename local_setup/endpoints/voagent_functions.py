@@ -12,7 +12,7 @@ from bolna.llms import LiteLLM
 import redis
 from fastapi.responses import JSONResponse
 from vo_utils.clerk_auth_utils import get_user_id_from_Token
-from vo_utils.database_utils import db, redis_client
+from vo_utils.database_utils import db
 from dotenv import load_dotenv
 router = APIRouter()
 load_dotenv()
@@ -27,9 +27,6 @@ from bolna.agent_manager.assistant_manager import AssistantManager
 class CreateAgentPayload(BaseModel):
     agent_config: AgentModel
     agent_prompts: Optional[Dict[str, Dict[str, str]]]
-
-redis_pool = redis.ConnectionPool.from_url(os.getenv('REDIS_URL'), decode_responses=True)
-redis_client = redis.Redis.from_pool(redis_pool)
 
 
 @router.post("/agent")
@@ -162,6 +159,7 @@ async def websocket_endpoint(agent_id: str, websocket: WebSocket, user_agent: st
 
 ################################################################
 # Redis Based Implementation for Agents
+from vo_utils.database_utils import db
 
 # @router.post("/agent")
 # async def create_agent(agent_data: CreateAgentPayload):
