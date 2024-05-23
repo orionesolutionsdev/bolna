@@ -3,6 +3,9 @@ FROM python:3.10.13-slim
 WORKDIR /app
 COPY ./requirements.txt /app
 COPY ./quickstart_server.py /app
+COPY ./endpoints /app/endpoints
+COPY ./config.py /app/
+COPY vo_utils /app/vo_utils
 
 RUN apt-get update && apt-get install libgomp1 git -y
 RUN apt-get -y update && apt-get -y upgrade && apt-get install -y --no-install-recommends ffmpeg
