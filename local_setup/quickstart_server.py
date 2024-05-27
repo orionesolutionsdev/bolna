@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from vo_utils.clerk_auth_utils import CustomAuthMiddleware
-from endpoints import voagent_functions, voagent_llm_providers, voagent_voices
+from endpoints import agent_functions, agent_llm_providers, agent_voices
 from bolna.helpers.logger_config import configure_logger
 from bolna.models import *
 from vo_utils.database_utils import db
@@ -17,5 +17,5 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
-for endpoint in  [ voagent_functions, voagent_llm_providers, voagent_voices ]:
+for endpoint in  [ agent_functions, agent_llm_providers, agent_voices ]:
     app.include_router(endpoint.router)

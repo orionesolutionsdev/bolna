@@ -23,6 +23,12 @@ from config import settings
 from bolna.agent_manager.assistant_manager import AssistantManager
 
 
+class AgentModelPrompt(BaseModel):
+    agent_name: str
+    agent_type: str = "other"
+    tasks: List[Task]
+    agent_prompts: Optional[Dict[str, Dict[str, str]]] = None
+ # Usually of the format task_1: { "system_prompt" : "helpful agent" } #For IVR type it should be a basic graph
 
 class CreateAgentPayload(BaseModel):
     agent_config: AgentModel
@@ -58,6 +64,7 @@ async def create_agent(agent_data: CreateAgentPayload, header:Request):
     )
     data_for_db['created_at'] = datetime.now().isoformat()
     data_for_db['agent_id'] = agent_uuid
+    data_for_db['agent_prompts'] = agent_prompts
     data_for_db['user_id'] = user_id
     db[settings.MONGO_COLLECTION].insert_one(data_for_db)
 
@@ -68,22 +75,21 @@ async def create_agent(agent_data: CreateAgentPayload, header:Request):
 @router.get("/agent/all")
 async def get_all_agents(header:Request):
     agents_data = []
-    agent_ids = db[settings.MONGO_COLLECTION].distinct('agent_id')
-    for agent_id in agent_ids:
-        agent_config = db[settings.MONGO_COLLECTION].find_one({"agent_id": agent_id}, {'_id':0, 'agent_id':0})
-        if agent_config:
-            agent_data = {
-                "agent_id": agent_id,
-                "agent_config": agent_config
-            }
-            agents_data.append(agent_data)
+    user_id = get_user_id_from_Token(header)
+    results = list(db[settings.MONGO_COLLECTION].find({"user_id": user_id}, {'_id':0}).sort('created_at', -1))
+    for agent in results:
+        agent_id = agent.pop('agent_id')
+        agents_data.append({'agent_id': agent_id, 'agent_config': agent})
     return JSONResponse(content= agents_data, status_code=200)
 
 
 @router.get("/agent/{agent_id}")
 async def get_agent(agent_id: str, header:Request):
     try:
-        agent_data = db[settings.MONGO_COLLECTION].find_one({"agent_id": agent_id}, {'_id':0, 'agent_id':0})
+        user_id = get_user_id_from_Token(header)
+        agent_data = db[settings.MONGO_COLLECTION].find_one({"agent_id": agent_id,
+                                                             "user_id": user_id},
+                                                             {'_id':0, 'agent_id':0})
         if agent_data:
             return JSONResponse(content=agent_data, status_code=200)
         else:
@@ -94,9 +100,12 @@ async def get_agent(agent_id: str, header:Request):
 
 
 @router.put("/agent/{agent_id}")
-async def update_agent(agent_id: str, agent_data: AgentModel, header:Request):
+async def update_agent(agent_id: str, agent_data: AgentModelPrompt, header:Request):
     try:
-        agent_config = db[settings.MONGO_COLLECTION].find_one({"agent_id": agent_id})
+        user_id = get_user_id_from_Token(header)
+        agent_config = db[settings.MONGO_COLLECTION].find_one({"agent_id": agent_id,
+                                                               "user_id": user_id
+                                                               })
         if agent_config:
             agent_config.update({key: value for key, value in agent_data.model_dump().items()})
             db['agents'].update_one({"agent_id": agent_id}, {"$set": agent_config})
@@ -110,7 +119,8 @@ async def update_agent(agent_id: str, agent_data: AgentModel, header:Request):
 @router.delete("/agent/{agent_id}")
 async def delete_agent(agent_id: str, header:Request):
     try:
-        result = db[settings.MONGO_COLLECTION].delete_one({"agent_id": agent_id})
+        user_id = get_user_id_from_Token(header)
+        result = db[settings.MONGO_COLLECTION].delete_one({"agent_id": agent_id, 'user_id': user_id})
         if result.deleted_count == 1:
             return JSONResponse(content={"message": "Agent deleted successfully"}, status_code=200)
         else:
