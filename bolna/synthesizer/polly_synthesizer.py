@@ -36,6 +36,9 @@ class PollySynthesizer(BaseSynthesizer):
     def get_engine(self):
         return self.engine
 
+    def supports_websocket(self):
+        return False
+
     def get_format(self, audio_format):
         if audio_format == "pcm":
             return "pcm"
@@ -125,6 +128,7 @@ class PollySynthesizer(BaseSynthesizer):
                 meta_info["end_of_synthesizer_stream"] = True
                 self.first_chunk_generated = False
             meta_info['text'] = text
+            meta_info['format'] = 'wav'
             yield create_ws_data_packet(message, meta_info)
 
     async def push(self, message):

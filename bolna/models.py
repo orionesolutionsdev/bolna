@@ -3,6 +3,8 @@ from typing import Optional, List, Union, Dict
 from pydantic import BaseModel, Field, validator, ValidationError, Json
 from .providers import *
 
+AGENT_WELCOME_MESSAGE = "This call is being recorded for quality assurance and training. Please speak now."
+
 
 def validate_attribute(value, allowed_values):
     if value not in allowed_values:
@@ -54,6 +56,8 @@ class Transcriber(BaseModel):
     encoding: Optional[str] = "linear16"
     endpointing: Optional[int] = 400
     keywords: Optional[str] = None
+    modeltype: Optional[str] = "whisper-tiny"
+    task:Optional[str] = "transcribe"
 
     @validator("model")
     def validate_model(cls, value):
@@ -83,19 +87,23 @@ class IOModel(BaseModel):
 
     @validator("provider")
     def validate_provider(cls, value):
-        return validate_attribute(value, ["twilio", "default", "database", "exotel"])
+        return validate_attribute(value, ["twilio", "default", "database", "exotel", "plivo"])
+
 
 # Can be used to route across multiple prompts as well
 class Route(BaseModel):
     route_name: str
     utterances: List[str]
-    response: Union[List[str], str] #If length of responses is less than utterances, a random sentence will be used as a response and if it's equal, respective index will be used to use it as FAQs caching
-    score_threshold: Optional[float] = 0.85 # this is the required threshold for cosine similarity 
+    response: Union[List[
+        str], str]  # If length of responses is less than utterances, a random sentence will be used as a response and if it's equal, respective index will be used to use it as FAQs caching
+    score_threshold: Optional[float] = 0.85  # this is the required threshold for cosine similarity
+
 
 # Routes can be used for FAQs caching, prompt routing, guard rails, agent assist function calling
 class Routes(BaseModel):
     embedding_model: Optional[str] = "Snowflake/snowflake-arctic-embed-l"
     routes: List[Route]
+
 
 class LLM(BaseModel):
     model: Optional[str] = "gpt-3.5-turbo-16k"
@@ -116,6 +124,7 @@ class LLM(BaseModel):
     extraction_details: Optional[str] = None
     summarization_details: Optional[str] = None
 
+
 class MessagingModel(BaseModel):
     provider: str
     template: str
@@ -128,14 +137,15 @@ class CalendarModel(BaseModel):
     email: str
     time: str
 
+class APIParams(BaseModel):
+    url: str
+    method: Optional[str] = "POST"
+    api_token: Optional[str] = None
+    param: Optional[str] = None #Payload for the URL
 
 class ToolModel(BaseModel):
-    calendar: Optional[CalendarModel] = None
-    whatsapp: Optional[MessagingModel] = None
-    sms: Optional[MessagingModel] = None
-    email: Optional[MessagingModel] = None
-    webhookURL: Optional[str] = None
-
+    tools: str #Goes in as a prompt
+    tools_params: Dict[str, APIParams]
 
 class ToolsConfig(BaseModel):
     llm_agent: Optional[LLM] = None
@@ -145,10 +155,10 @@ class ToolsConfig(BaseModel):
     output: Optional[IOModel] = None
     api_tools: Optional[ToolModel] = None
 
-
 class ToolsChainModel(BaseModel):
     execution: str = Field(..., pattern="^(parallel|sequential)$")
     pipelines: List[List[str]]
+
 
 class ConversationConfig(BaseModel):
     optimize_latency: Optional[bool] = True  # This will work on in conversation
@@ -162,6 +172,8 @@ class ConversationConfig(BaseModel):
     backchanneling: Optional[bool] = False
     backchanneling_message_gap: Optional[int] = 5
     backchanneling_start_delay: Optional[int] = 5
+    ambient_noise: Optional[bool] = False 
+    ambient_noise_track: Optional[str] = "convention_hall"
 
 class Task(BaseModel):
     tools_config: ToolsConfig
@@ -169,8 +181,9 @@ class Task(BaseModel):
     task_type: Optional[str] = "conversation"  # extraction, summarization, notification
     task_config: ConversationConfig = dict()
 
+
 class AgentModel(BaseModel):
     agent_name: str
     agent_type: str = "other"
     tasks: List[Task]
- # Usually of the format task_1: { "system_prompt" : "helpful agent" } #For IVR type it should be a basic graph
+    agent_welcome_message: Optional[str] = AGENT_WELCOME_MESSAGE
