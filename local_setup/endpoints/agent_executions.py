@@ -11,7 +11,7 @@ router = APIRouter()
 @router.get("/agent/{agent_id}/executions")
 async def get_agent(agent_id: str, header:Request):
     try:
-        user_id = get_user_id_from_Token(header)
+        # user_id = get_user_id_from_Token(header)
         if user_id:
             agent_data = db[settings.EXECUTION_COLLECTION].find({"agent_id": agent_id}, {'_id':0})
             if agent_data:
@@ -26,7 +26,7 @@ async def get_agent(agent_id: str, header:Request):
 @router.get("/agent/executions/{run_id}")
 async def get_agent(run_id: str, header:Request):
     try:
-        user_id = get_user_id_from_Token(header)
+        # user_id = get_user_id_from_Token(header)
         if user_id:
             agent_data = db[settings.EXECUTION_COLLECTION].find_one({"run_id": run_id}, {'_id':0})
             if agent_data:
