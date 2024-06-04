@@ -21,6 +21,13 @@ active_websockets: List[WebSocket] = []
 
 from config import settings
 from bolna.agent_manager.assistant_manager import AssistantManager
+AGENT_WELCOME_MESSAGE = "This call is being recorded for quality assurance and training. Please speak now."
+
+class AgentModel(BaseModel):
+    agent_name: str
+    agent_type: str = "other"
+    tasks: List[Task]
+    agent_welcome_message: Optional[str] = AGENT_WELCOME_MESSAGE
 
 
 class AgentModelPrompt(BaseModel):
@@ -145,15 +152,17 @@ async def websocket_endpoint(agent_id: str, websocket: WebSocket, user_agent: st
     try:
         agent_config = db[settings.MONGO_COLLECTION].find_one({"agent_id": agent_id}, {'_id':0, 'agent_id':0})
         # retrieved_agent_config =  redis_client.get(agent_id)
-
+        if 'agent_welcome_message' in agent_config:
+            agent_welcome_message = str(agent_config['agent_welcome_message'])
+        else:
+            agent_welcome_message = AGENT_WELCOME_MESSAGE
         logger.info(
             f"Retrieved agent config: {agent_config}")
         # agent_config = json.loads(retrieved_agent_config)
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=404, detail="Agent not found")
-
-    assistant_manager = AssistantManager(agent_config, websocket, agent_id)
+    assistant_manager = AssistantManager(agent_config, websocket, agent_id, agent_welcome_message=agent_welcome_message)
 
     try:
         async for index, task_output in assistant_manager.run(local=True):
