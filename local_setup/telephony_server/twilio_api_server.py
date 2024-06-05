@@ -8,7 +8,9 @@ from dotenv import load_dotenv
 import redis.asyncio as redis
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import PlainTextResponse
-
+from vo_utils.database_utils import db
+from datetime import datetime
+from config import settings
 app = FastAPI()
 load_dotenv()
 port = 8001
@@ -44,7 +46,15 @@ async def make_call(request: Request):
     try:
         call_details = await request.json()
         agent_id = call_details.get('agent_id', None)
-
+        recipient_data = call_details.get('recipient_data', None)
+        context_id =  str(uuid.uuid4())
+        data_for_db ={
+                    'context_id': context_id,
+                    'created_at': datetime.now().isoformat(),
+                    'recipient_data': recipient_data
+                    }
+    # redis_client.set(context_id, json.dumps(context_data))
+        db[settings.CALL_CONTEXTS].insert_one(data_for_db)
         if not agent_id:
             raise HTTPException(status_code=404, detail="Agent not provided")
         
@@ -59,7 +69,7 @@ async def make_call(request: Request):
         call = twilio_client.calls.create(
             to=call_details.get('recipient_phone_number'),
             from_=twilio_phone_number,
-            url=f"{app_callback_url}/twilio_callback?ws_url={websocket_url}&agent_id={agent_id}",
+            url=f"{app_callback_url}/twilio_callback?ws_url={websocket_url}&agent_id={agent_id}&context_id={context_id}",
             method="POST",
             record=False
         )
@@ -72,12 +82,12 @@ async def make_call(request: Request):
 
 
 @app.post('/twilio_callback')
-async def twilio_callback(ws_url: str = Query(...), agent_id: str = Query(...)):
+async def twilio_callback(ws_url: str = Query(...), agent_id: str = Query(...), context_id: str = Query(...)):
     try:
         response = VoiceResponse()
 
         connect = Connect()
-        websocket_twilio_route = f'{ws_url}/chat/v1/{agent_id}'
+        websocket_twilio_route = f'{ws_url}/chat/v1/{agent_id}/{context_id}'
         connect.stream(url=websocket_twilio_route)
         print(f"websocket connection done to {websocket_twilio_route}")
         response.append(connect)

@@ -143,15 +143,26 @@ active_websockets: List[WebSocket] = []
 ############################################################################################# 
 # Websocket 
 #############################################################################################
-@router.websocket("/chat/v1/{agent_id}")
-async def websocket_endpoint(agent_id: str, websocket: WebSocket, user_agent: str = Query(None)):
+@router.websocket("/chat/v1/{agent_id}/{context_id}")
+async def websocket_endpoint(agent_id: str, websocket: WebSocket, user_agent: str = Query(None)
+                             , context_id:  str= ''
+                             ):
     logger.info("Connected to ws")
     await websocket.accept()
     active_websockets.append(websocket)
     agent_config, context_data = None, None
     try:
         agent_config = db[settings.MONGO_COLLECTION].find_one({"agent_id": agent_id}, {'_id':0, 'agent_id':0})
-        # retrieved_agent_config =  redis_client.get(agent_id)
+        if len(context_id)>0:
+            context_data = db[settings.CALL_CONTEXTS].find_one({"context_id": context_id}, 
+                                                               {'_id':0, 'context_id':0, 'created_at':0})
+        logger.info(f"context_data result: {context_data}")
+
+        # context_data = {
+        #     "recipient_data": {
+        #         "username":"satyam"
+        #         }
+        # }
         if 'agent_welcome_message' in agent_config:
             agent_welcome_message = str(agent_config['agent_welcome_message'])
         else:
@@ -162,7 +173,7 @@ async def websocket_endpoint(agent_id: str, websocket: WebSocket, user_agent: st
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=404, detail="Agent not found")
-    assistant_manager = AssistantManager(agent_config, websocket, agent_id, agent_welcome_message=agent_welcome_message)
+    assistant_manager = AssistantManager(agent_config, websocket, agent_id, agent_welcome_message=agent_welcome_message, context_data=context_data)
 
     try:
         async for index, task_output in assistant_manager.run(local=True):

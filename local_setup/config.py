@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     # LITELLM_MODEL_API_BASE : str
     MONGO_DATABASE: str
     MONGO_COLLECTION : str
+    CALL_CONTEXTS: str = "call_contexts"
     EXECUTION_COLLECTION : str = "execution_metadata"
     model_config = SettingsConfigDict(env_file=".env")
 
