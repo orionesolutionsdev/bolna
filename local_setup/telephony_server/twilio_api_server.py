@@ -11,6 +11,7 @@ from fastapi.responses import PlainTextResponse
 from vo_utils.database_utils import db
 from datetime import datetime
 from config import settings
+from fastapi.middleware.cors import CORSMiddleware
 app = FastAPI()
 load_dotenv()
 port = 8001
@@ -19,6 +20,13 @@ twilio_account_sid = os.getenv('TWILIO_ACCOUNT_SID')
 twilio_auth_token = os.getenv('TWILIO_AUTH_TOKEN')
 twilio_phone_number = os.getenv('TWILIO_PHONE_NUMBER')
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"]
+)
 # Initialize Twilio client
 twilio_client = Client(twilio_account_sid, twilio_auth_token)
 
