@@ -114,8 +114,14 @@ async def update_agent(agent_id: str, agent_data: AgentModelPrompt, header:Reque
                                                                "user_id": user_id
                                                                })
         if agent_config:
-            agent_config.update({key: value for key, value in agent_data.model_dump().items()})
-            db['agents'].update_one({"agent_id": agent_id}, {"$set": agent_config})
+            agent_data_response = agent_data.model_dump()
+            agent_config.update({key: value for key, value in agent_data_response.items()})
+            agent_prompts = agent_data_response.get("agent_prompts")
+            stored_prompt_file_path = f"{agent_id}/conversation_details.json"
+            asyncio.gather(
+                store_file(file_key=stored_prompt_file_path, file_data=agent_prompts, local=True)
+            )
+            db[settings.MONGO_COLLECTION].update_one({"agent_id": agent_id}, {"$set": agent_config})
             return JSONResponse(content={"message": "Agent updated successfully"}, status_code=200)
         else:
             return JSONResponse(content={"message": "Agent not found"}, status_code=404)
@@ -158,11 +164,6 @@ async def websocket_endpoint(agent_id: str, websocket: WebSocket, user_agent: st
                                                                {'_id':0, 'context_id':0, 'created_at':0})
         logger.info(f"context_data result: {context_data}")
 
-        # context_data = {
-        #     "recipient_data": {
-        #         "username":"satyam"
-        #         }
-        # }
         if 'agent_welcome_message' in agent_config:
             agent_welcome_message = str(agent_config['agent_welcome_message'])
         else:
@@ -190,97 +191,3 @@ async def websocket_endpoint(agent_id: str, websocket: WebSocket, user_agent: st
 ################################################################
 # Redis Based Implementation for Agents
 from vo_utils.database_utils import db
-
-# @router.post("/agent")
-# async def create_agent(agent_data: CreateAgentPayload):
-#     agent_uuid = str(uuid.uuid4())
-#     data_for_db = agent_data.agent_config.model_dump()
-#     data_for_db["assistant_status"] = "seeding"
-#     agent_prompts = agent_data.agent_prompts
-#     logger.info(f'Data for DB {data_for_db}')
-
-#     if len(data_for_db['tasks']) > 0:
-#         logger.info("Setting up follow up tasks")
-#         for index, task in enumerate(data_for_db['tasks']):
-#             if task['task_type'] == "extraction":
-#                 extraction_prompt_llm = os.getenv("EXTRACTION_PROMPT_GENERATION_MODEL")
-#                 extraction_prompt_generation_llm = LiteLLM(model=extraction_prompt_llm, max_tokens=2000)
-#                 extraction_prompt = await extraction_prompt_generation_llm.generate(
-#                     messages=[
-#                         {'role': 'system', 'content': EXTRACTION_PROMPT_GENERATION_PROMPT},
-#                         {'role': 'user', 'content': data_for_db["tasks"][index]['tools_config']["llm_agent"]['extraction_details']}
-#                     ])
-#                 data_for_db["tasks"][index]["tools_config"]["llm_agent"]['extraction_json'] = extraction_prompt
-
-#     stored_prompt_file_path = f"{agent_uuid}/conversation_details.json"
-#     await asyncio.gather(
-#             # redis_client.set(agent_uuid, json.dumps(data_for_db)),
-
-#         store_file(file_key=stored_prompt_file_path, file_data=agent_prompts, local=True)
-#     )
-#     redis_client.set(agent_uuid, json.dumps(data_for_db))
-
-#     return {"agent_id": agent_uuid, "state": "created"}
-
-
-# @app.get("/agent/all")
-# async def get_all_agents():
-#     agent_ids = await redis_client.keys()
-#     agents_data = []
-#     for agent_id in agent_ids:
-#         agent_config = await redis_client.get(agent_id)
-#         if agent_config:
-#             agent_config = json.loads(agent_config)
-#             agent_name = agent_config.get("agent_name")
-#             if agent_name:
-#                 agent_data = {
-#                     "agent_id": agent_id,
-#                     "agent_config": agent_config
-#                 }
-#                 agents_data.append(agent_data)
-#     return JSONResponse(content=agents_data, status_code=200)
-
-# @app.get("/agent/{agent_id}")
-# async def get_agent(agent_id: str):
-#     try:
-#         print(redis_client.keys())
-#         retrieved_agent_config = await redis_client.get(agent_id)
-#         if retrieved_agent_config:
-#             agent_config = json.loads(retrieved_agent_config)
-#             return JSONResponse(content=agent_config, status_code=200)
-#         else:
-#             return JSONResponse(content={"message": "Agent not found"}, status_code=404)
-#     except Exception as e:
-#         return JSONResponse(content={"message": str(e)}, status_code=500)
-
-
-# @app.put("/agent/{agent_id}")
-# async def update_agent(agent_id: str, agent_data: AgentModel):
-#     try:
-#         retrieved_agent_config = await redis_client.get(agent_id)
-#         if retrieved_agent_config:
-#             agent_config = json.loads(retrieved_agent_config)
-#             agent_config.update({key: value for key, value in agent_data.model_dump().items()})
-#             await redis_client.set(agent_id, json.dumps(dict(agent_config)))
-#             return JSONResponse(content={"message": "Agent updated successfully"}, status_code=200)
-#         else:
-#             return JSONResponse(content={"message": "Agent not found"}, status_code=404)
-#     except Exception as e:
-#         return JSONResponse(content={"message": str(e)}, status_code=500)
-
-# async def db_lifespan(app: APIRouter):
-#     # Startup
-#     app.mongodb_client = AsyncIOMotorClient(settings.MONGODB_URI)
-#     app.database = app.mongodb_client('test')
-#     ping_response = await app.database.command("ping")
-#     if int(ping_response["ok"]) != 1:
-#         raise Exception("Problem connecting to database cluster.")
-#     else:
-#         print("Connected to database cluster.")
-    
-#     yield
-
-#     # Shutdown
-#     app.mongodb_client.close()
-
-# app: APIRouter = APIRouter(lifespan=db_lifespan)
