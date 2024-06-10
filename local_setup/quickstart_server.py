@@ -37,4 +37,4 @@ try:
     )
     logger.info("Sentry SDK initialized")
 except Exception as e:
-    logger.error(e)
+    logger.info(f"Sentry SDK not initialized due to error {e}")
