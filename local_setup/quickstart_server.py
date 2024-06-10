@@ -7,8 +7,6 @@ from bolna.models import *
 from vo_utils.database_utils import db
 from config import settings
 import sentry_sdk
-from dotenv import load_dotenv
-load_dotenv()
 logger = configure_logger(__name__)
 
 app = FastAPI()
