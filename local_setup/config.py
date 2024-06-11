@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     MONGO_COLLECTION : str
     CALL_CONTEXTS: str = "call_contexts"
     EXECUTION_COLLECTION : str = "execution_metadata"
+    SENETRY_URL: str= 'https://bb616da6737c2a0dcdcf52aacdbcaf37@o4507378311495680.ingest.us.sentry.io/4507378318704640' # test_url
     model_config = SettingsConfigDict(env_file=".env")
 
 settings = Settings()
