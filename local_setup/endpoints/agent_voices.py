@@ -17,11 +17,18 @@ class Voice(BaseModel):
 
 # Initial voices data
 voices = [
-    Voice(provider="elevenlabs", name="Vikram", model="eleven_multilingual_v2", id="elaXKhiKoWZo6xP9iPob", languageCode="all", accent="indian", lowLatency=False),
-    Voice(provider="elevenlabs", name="Wendy", model="eleven_multilingual_v2", id="rQLJY7vvMTTC7a3CRh5M", languageCode="all", accent="american", lowLatency=False),
-    Voice(provider="elevenlabs", name="Ellie", model="eleven_multilingual_v2", id="4upRWoWGNrknWYN6YMHJ", languageCode="all", accent="american", lowLatency=False),
-    Voice(provider="elevenlabs", name="Sheps Rocky", model="eleven_multilingual_v2", id="d5xU2Rwln0n15oHMmaTU", languageCode="all", accent="american", lowLatency=False),
-    Voice(provider="elevenlabs", name="Adrianna", model="eleven_multilingual_v2", id="lbdM5yk6tkX9B7bLVf5d", languageCode="all", accent="australian", lowLatency=False),
+    Voice(provider="deepgram", name="Asteria", model="aura-asteria-en", id="asteria-voice-id", languageCode="en-US", accent="american", gender="female", lowLatency=False),
+    Voice(provider="deepgram", name="Luna", model="aura-luna-en", id="luna-voice-id", languageCode="en-US", accent="american", gender="female", lowLatency=False),
+    Voice(provider="deepgram", name="Stella", model="aura-stella-en", id="stella-voice-id", languageCode="en-US", accent="american", gender="female", lowLatency=False),
+    Voice(provider="deepgram", name="Athena", model="aura-athena-en", id="athena-voice-id", languageCode="en-UK", accent="british", gender="female", lowLatency=False),
+    Voice(provider="deepgram", name="Hera", model="aura-hera-en", id="hera-voice-id", languageCode="en-US", accent="american", gender="female", lowLatency=False),
+    Voice(provider="deepgram", name="Orion", model="aura-orion-en", id="orion-voice-id", languageCode="en-US", accent="american", gender="male", lowLatency=False),
+    Voice(provider="deepgram", name="Arcas", model="aura-arcas-en", id="arcas-voice-id", languageCode="en-US", accent="american", gender="male", lowLatency=False),
+    Voice(provider="deepgram", name="Perseus", model="aura-perseus-en", id="perseus-voice-id", languageCode="en-US", accent="american", gender="male", lowLatency=False),
+    Voice(provider="deepgram", name="Angus", model="aura-angus-en", id="angus-voice-id", languageCode="en-IE", accent="irish", gender="male", lowLatency=False),
+    Voice(provider="deepgram", name="Orpheus", model="aura-orpheus-en", id="orpheus-voice-id", languageCode="en-US", accent="american", gender="male", lowLatency=False),
+    Voice(provider="deepgram", name="Helios", model="aura-helios-en", id="helios-voice-id", languageCode="en-UK", accent="british", gender="male", lowLatency=False),
+    Voice(provider="deepgram", name="Zeus", model="aura-zeus-en", id="zeus-voice-id", languageCode="en-US", accent="american", gender="male", lowLatency=False),
 ]
 
 @router.get("/voices", response_model=List[Voice])

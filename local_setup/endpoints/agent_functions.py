@@ -34,6 +34,7 @@ class AgentModelPrompt(BaseModel):
     agent_name: str
     agent_type: str = "other"
     tasks: List[Task]
+    agent_welcome_message: Optional[str] = AGENT_WELCOME_MESSAGE
     agent_prompts: Optional[Dict[str, Dict[str, str]]] = None
  # Usually of the format task_1: { "system_prompt" : "helpful agent" } #For IVR type it should be a basic graph
 
