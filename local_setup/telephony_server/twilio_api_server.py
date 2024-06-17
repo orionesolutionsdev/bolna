@@ -54,6 +54,7 @@ async def make_call(request: Request):
     try:
         call_details = await request.json()
         agent_id = call_details.get('agent_id', None)
+        from_number = call_details.get('from_number', twilio_phone_number)
         recipient_data = call_details.get('recipient_data', None)
         context_id =  str(uuid.uuid4())
         data_for_db ={
@@ -76,7 +77,7 @@ async def make_call(request: Request):
 
         call = twilio_client.calls.create(
             to=call_details.get('recipient_phone_number'),
-            from_=twilio_phone_number,
+            from_=from_number,
             url=f"{app_callback_url}/twilio_callback?ws_url={websocket_url}&agent_id={agent_id}&context_id={context_id}",
             method="POST",
             record=False
