@@ -18,5 +18,8 @@ RUN pip install pydub==0.25.1
 RUN pip install ffprobe
 RUN pip install aiofiles
 RUN pip install 'sentry-sdk[fastapi]'
+RUN pip install python-multipart
+RUN pip install motor==3.4.0
+RUN pip install daily-python==0.9.1
 EXPOSE 5001
 CMD ["uvicorn", "quickstart_server:app", "--host", "0.0.0.0", "--port", "5001"]
