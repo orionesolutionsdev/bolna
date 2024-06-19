@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     MONGODB_URI : str
     DEEPGRAM_AUTH_TOKEN : str
     DEEPGRAM_API_KEY : str
-    OPEN_API_KEY : str
+    # OPEN_API_KEY : str
     OPENAI_API_KEY: str
     ENVIRONMENT : str
     WEBSOCKET_URL :str

@@ -1,3 +1,6 @@
+from datetime import datetime
+
+
 EXTRACTION_PROMPT = """
 Given this transcript from the communication between user and an agent, your task is to extract following information:
 ###JSON Structure
@@ -14,11 +17,11 @@ Given this transcript from the communication between user and an agent your task
 completion_json_format = {"answer": "A simple Yes or No based on if you should cut the phone or not"}
 
 CHECK_FOR_COMPLETION_PROMPT = """
-You are an helpful AI assistant that's having a conversation with customer. 
+You are an helpful AI assistant that's having a conversation with customer on a phone call. 
 Based on the given transcript, should you cut the call?\n\n 
 RULES: 
-1. If user is not interested in talking, or is annoying or something, we need to cut the phone. 
-2. You are also provided with original prompt to make your decision if we need to cut the phone or not.  
+1. If user is not interested in talking, or is annoyed or is angry we might need to cut the phone. 
+2. You are also provided with original prompt use the content of original prompt to make your decision. For example if the purpose of the phone call is done and we have all the required content we need to cut the call.
 
 ### JSON Structure
 {}
@@ -52,3 +55,8 @@ Keep your persona summary less than 150 words, do NOT exceed this word limit.
 Only output the persona, do NOT include anything else in your output.
 If there were any proper nouns, or number or date or time involved explicitly maintain it.
 """
+
+FILLER_PROMPT = "Please, do not start your response with fillers like Got it, Noted.\nAbstain from using any greetings like hey, hello at the start of your conversation"
+
+today = datetime.now().strftime("%A, %B %d, %Y")
+DATE_PROMPT = f"### Date\n Today\'s Date is {today}"
