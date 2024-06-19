@@ -50,14 +50,14 @@ services:
     env_file:
       - .env
 
-  plivo-app:
-    image: plivo-app:latest
-    build:
-      context: .
-      dockerfile: dockerfiles/plivo_server.Dockerfile
-    ports:
-      - "8002:8002"
-    depends_on:
-      - redis
-    env_file:
-      - .env
+  # plivo-app:
+  #   image: plivo-app:latest
+  #   build:
+  #     context: .
+  #     dockerfile: dockerfiles/plivo_server.Dockerfile
+  #   ports:
+  #     - "8002:8002"
+  #   depends_on:
+  #     - redis
+  #   env_file:
+  #     - .env
