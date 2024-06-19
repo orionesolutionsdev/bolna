@@ -1,44 +1,65 @@
+
 import aiohttp
 import os
 from dotenv import load_dotenv
 from bolna.helpers.logger_config import configure_logger
 from bolna.helpers.utils import create_ws_data_packet
 from .base_synthesizer import BaseSynthesizer
+import json
+import base64
 
-logger = configure_logger(__name__)
 load_dotenv()
-DEEPGRAM_HOST = os.getenv('DEEPGRAM_HOST', 'api.deepgram.com')
-DEEPGRAM_TTS_URL = "https://{}/v1/speak".format(DEEPGRAM_HOST)
+logger = configure_logger(__name__)
 
 
-class DeepgramSynthesizer(BaseSynthesizer):
-    def __init__(self, voice, audio_format="pcm", sampling_rate="8000", stream=False, buffer_size=400,
+
+class MeloSynthesizer(BaseSynthesizer):
+    def __init__(self, audio_format="pcm", sampling_rate="8000", stream=False, buffer_size=400,
                  **kwargs):
         super().__init__(stream, buffer_size)
         self.format = "linear16" if audio_format == "pcm" else audio_format
-        self.voice = voice
-        self.sample_rate = str(sampling_rate)
+        self.sample_rate = int(sampling_rate)
         self.first_chunk_generated = False
-        self.api_key = kwargs.get("transcriber_key", os.getenv('DEEPGRAM_AUTH_TOKEN'))
+        self.url = os.getenv('MELO_TTS')
+
+        MELOTTS_VOICE_MAP = {
+            "Alex": "EN-US",
+            "Ariel": "EN-BR",
+            "Taylor": "EN-AU",
+            "Casey": "EN-Default",
+            "Aadi": "EN-India"
+        }
+
+
+        self.voice_name = kwargs.get('voice', "Casey")
+        self.voice = MELOTTS_VOICE_MAP.get(self.voice_name)
+        self.sample_rate = kwargs.get('sample_rate')
+        self.sdp_ratio = kwargs.get('sdp_ratio')
+        self.noise_scale=kwargs.get('noise_scale')
+        self.noise_scale_w = kwargs.get('noise_scale_w')
+        self.speed = kwargs.get('speed')
 
     async def __generate_http(self, text):
-        headers = {
-            "Authorization": "Token {}".format(self.api_key),
-            "Content-Type": "application/json"
-        }
-        url = DEEPGRAM_TTS_URL + "?encoding={}&container=none&sample_rate={}&model={}".format(
-            self.format, self.sample_rate, self.voice
-        )
-
         payload = {
-            "text": text
+            "voice_id": self.voice,
+            "text": text,
+            "sr": self.sample_rate,
+            "sdp_ratio" : self.sdp_ratio,
+            "noise_scale" : self.noise_scale,
+            "noise_scale_w" :  self.noise_scale_w,
+            "speed" : self.speed
+        }
+
+        headers = {
+            'Content-Type': 'application/json'
         }
 
         async with aiohttp.ClientSession() as session:
             if payload is not None:
-                async with session.post(url, headers=headers, json=payload) as response:
+                async with session.post(self.url, headers=headers, json=payload) as response:
                     if response.status == 200:
-                        chunk = await response.read()
+                        res_json:dict = json.loads(await response.text())
+                        chunk = base64.b64decode(res_json["audio"])
                         yield chunk
             else:
                 logger.info("Payload was null")
