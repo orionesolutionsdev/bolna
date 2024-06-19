@@ -46,15 +46,21 @@ class LiteLLM(BaseLLM):
             if "api_version" in kwargs:
                 self.model_args["api_version"] = kwargs["api_version"]
 
-    async def generate_stream(self, messages, synthesize=True):
+    async def generate_stream(self, messages, synthesize=True, meta_info = None):
         answer, buffer = "", ""
         model_args = self.model_args.copy()
         model_args["messages"] = messages
         model_args["stream"] = True
 
         logger.info(f"request to model: {self.model}: {messages} and model args {model_args}")
+        latency = False
         start_time = time.time()
         async for chunk in await litellm.acompletion(**model_args):
+            if not self.started_streaming:
+                first_chunk_time = time.time()
+                latency = first_chunk_time - start_time
+                logger.info(f"LLM Latency: {latency:.2f} s")
+                self.started_streaming = True
             if (text_chunk := chunk['choices'][0]['delta'].content) and not chunk['choices'][0].finish_reason:
                 answer += text_chunk
                 buffer += text_chunk
@@ -65,18 +71,18 @@ class LiteLLM(BaseLLM):
                     if synthesize:
                         if not self.started_streaming:
                             self.started_streaming = True
-                        yield text, False
+                        yield text, False, latency
                     buffer = buffer.split(" ")[-1]
 
         if synthesize:
             if buffer != "":
-                yield buffer, True
+                yield buffer, True, latency
         else:
-            yield answer, True
+            yield answer, True, latency
         self.started_streaming = False
         logger.info(f"Time to generate response {time.time() - start_time} {answer}")
 
-    async def generate(self, messages, stream=False, request_json=False):
+    async def generate(self, messages, stream=False, request_json=False, meta_info = None):
         text = ""
         model_args = self.model_args.copy()
         model_args["model"] = self.model

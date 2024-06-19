@@ -3,6 +3,8 @@ from typing import Optional, List, Union, Dict
 from pydantic import BaseModel, Field, validator, ValidationError, Json
 from .providers import *
 
+AGENT_WELCOME_MESSAGE = "This call is being recorded for quality assurance and training. Please speak now."
+
 
 def validate_attribute(value, allowed_values):
     if value not in allowed_values:
@@ -46,6 +48,25 @@ class DeepgramConfig(BaseModel):
     voice: str
 
 
+class MeloConfig(BaseModel):
+    voice:str = 'Casey'
+    sample_rate: int
+    sdp_ratio: float = 0.2
+    noise_scale: float = 0.6
+    noise_scale_w: float = 0.8
+    speed: float = 1.0
+
+
+class StylettsConfig(BaseModel):
+    voice: str
+    rate: int = 8000
+    voice_id: str = 'Jess'
+    alpha: float = 0.3
+    beta: float = 0.7
+    diffusion_steps: int = 5
+    embedding_scale: float = 1
+
+
 class Transcriber(BaseModel):
     model: str
     language: Optional[str] = None
@@ -54,6 +75,8 @@ class Transcriber(BaseModel):
     encoding: Optional[str] = "linear16"
     endpointing: Optional[int] = 400
     keywords: Optional[str] = None
+    modeltype: Optional[str] = "whisper-tiny"
+    task:Optional[str] = "transcribe"
 
     @validator("model")
     def validate_model(cls, value):
@@ -66,7 +89,7 @@ class Transcriber(BaseModel):
 
 class Synthesizer(BaseModel):
     provider: str
-    provider_config: Union[PollyConfig, XTTSConfig, ElevenLabsConfig, OpenAIConfig, FourieConfig, DeepgramConfig]
+    provider_config: Union[PollyConfig, XTTSConfig, ElevenLabsConfig, OpenAIConfig, FourieConfig, StylettsConfig,  MeloConfig, DeepgramConfig] = Field(union_mode='left_to_right')
     stream: bool = False
     buffer_size: Optional[int] = 40  # 40 characters in a buffer
     audio_format: Optional[str] = "pcm"
@@ -74,7 +97,7 @@ class Synthesizer(BaseModel):
 
     @validator("provider")
     def validate_model(cls, value):
-        return validate_attribute(value, ["polly", "xtts", "elevenlabs", "openai", "deepgram"])
+        return validate_attribute(value, ["polly", "xtts", "elevenlabs", "openai", "deepgram", "meloTTS", "styletts"])
 
 
 class IOModel(BaseModel):
@@ -83,19 +106,23 @@ class IOModel(BaseModel):
 
     @validator("provider")
     def validate_provider(cls, value):
-        return validate_attribute(value, ["twilio", "default", "database", "exotel"])
+        return validate_attribute(value, ["twilio", "default", "database", "exotel", "plivo", "daily"])
+
 
 # Can be used to route across multiple prompts as well
 class Route(BaseModel):
     route_name: str
     utterances: List[str]
-    response: Union[List[str], str] #If length of responses is less than utterances, a random sentence will be used as a response and if it's equal, respective index will be used to use it as FAQs caching
-    score_threshold: Optional[float] = 0.85 # this is the required threshold for cosine similarity 
+    response: Union[List[
+        str], str]  # If length of responses is less than utterances, a random sentence will be used as a response and if it's equal, respective index will be used to use it as FAQs caching
+    score_threshold: Optional[float] = 0.85  # this is the required threshold for cosine similarity
+
 
 # Routes can be used for FAQs caching, prompt routing, guard rails, agent assist function calling
 class Routes(BaseModel):
     embedding_model: Optional[str] = "Snowflake/snowflake-arctic-embed-l"
     routes: List[Route]
+
 
 class LLM(BaseModel):
     model: Optional[str] = "gpt-3.5-turbo-16k"
@@ -128,14 +155,15 @@ class CalendarModel(BaseModel):
     email: str
     time: str
 
+class APIParams(BaseModel):
+    url: str
+    method: Optional[str] = "POST"
+    api_token: Optional[str] = None
+    param: Optional[str] = None #Payload for the URL
 
 class ToolModel(BaseModel):
-    calendar: Optional[CalendarModel] = None
-    whatsapp: Optional[MessagingModel] = None
-    sms: Optional[MessagingModel] = None
-    email: Optional[MessagingModel] = None
-    webhookURL: Optional[str] = None
-
+    tools: str #Goes in as a prompt
+    tools_params: Dict[str, APIParams]
 
 class ToolsConfig(BaseModel):
     llm_agent: Optional[LLM] = None
@@ -145,10 +173,10 @@ class ToolsConfig(BaseModel):
     output: Optional[IOModel] = None
     api_tools: Optional[ToolModel] = None
 
-
 class ToolsChainModel(BaseModel):
     execution: str = Field(..., pattern="^(parallel|sequential)$")
     pipelines: List[List[str]]
+
 
 class ConversationConfig(BaseModel):
     optimize_latency: Optional[bool] = True  # This will work on in conversation
@@ -162,15 +190,20 @@ class ConversationConfig(BaseModel):
     backchanneling: Optional[bool] = False
     backchanneling_message_gap: Optional[int] = 5
     backchanneling_start_delay: Optional[int] = 5
+    ambient_noise: Optional[bool] = False 
+    ambient_noise_track: Optional[str] = "convention_hall"
+    call_terminate: Optional[int] = 90
+    use_fillers: Optional[bool] = False
+
 
 class Task(BaseModel):
     tools_config: ToolsConfig
     toolchain: ToolsChainModel
     task_type: Optional[str] = "conversation"  # extraction, summarization, notification
     task_config: ConversationConfig = dict()
-
+    
 class AgentModel(BaseModel):
     agent_name: str
     agent_type: str = "other"
     tasks: List[Task]
- # Usually of the format task_1: { "system_prompt" : "helpful agent" } #For IVR type it should be a basic graph
+    agent_welcome_message: Optional[str] = AGENT_WELCOME_MESSAGE

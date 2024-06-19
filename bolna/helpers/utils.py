@@ -1,3 +1,4 @@
+import datetime
 import json
 import asyncio
 import math
@@ -119,7 +120,7 @@ def raw_to_mulaw(raw_bytes):
     return mulaw_encoded
 
 
-async def get_s3_file(bucket_name, file_key):
+async def get_s3_file(bucket_name = BUCKET_NAME, file_key = ""):
     session = AioSession()
 
     async with AsyncExitStack() as exit_stack:
@@ -168,18 +169,24 @@ async def store_file(bucket_name=None, file_key=None, file_data=None, content_ty
     if local:
         dir_name = PREPROCESS_DIR if preprocess_dir is None else preprocess_dir
         directory_path = os.path.join(dir_name, os.path.dirname(file_key))
-        logger.info(file_data)
         os.makedirs(directory_path, exist_ok=True)
-        if content_type == "json":
+        try:
             logger.info(f"Writing to {dir_name}/{file_key} ")
-            with open(f"{dir_name}/{file_key}", 'w') as f:
-                data = json.dumps(file_data)
-                f.write(data)
-        elif content_type in ["mp3", "wav", "pcm", "csv"]:
-            with open(f"{dir_name}/{file_key}", 'w') as f:
-                data = file_data
-                f.write(data)
-
+            if content_type == "json":
+                
+                with open(f"{dir_name}/{file_key}", 'w') as f:
+                    data = json.dumps(file_data)
+                    f.write(data)
+            elif content_type in ['csv']:
+                with open(f"{dir_name}/{file_key}", 'w') as f:
+                    data = file_data
+                    f.write(data)
+            elif content_type in ["mp3", "wav", "pcm"]:
+                with open(f"{dir_name}/{file_key}", 'wb') as f:
+                    data = file_data
+                    f.write(data)
+        except Exception as e:
+            logger.error(f"Could not save local file {e}")
 
 async def get_raw_audio_bytes(filename, agent_name = None, audio_format='mp3', assistant_id=None, local = False, is_location = False):
     # we are already storing pcm formatted audio in the filler config. No need to encode/decode them further
@@ -377,8 +384,8 @@ def merge_wav_bytes(wav_files_bytes):
     combined.export(buffer, format="wav")
     return buffer.getvalue()
 
-def calculate_audio_duration(size_bytes, sampling_rate, bit_depth = 16, channels = 1):
-    bytes_per_sample = (bit_depth / 8) * channels
+def calculate_audio_duration(size_bytes, sampling_rate, bit_depth = 16, channels = 1, format = "wav"):
+    bytes_per_sample = (bit_depth / 8) * channels if format != 'mulaw' else 1
     total_samples = size_bytes / bytes_per_sample
     duration_seconds = total_samples / sampling_rate
     return duration_seconds
@@ -420,15 +427,15 @@ async def write_request_logs(message, run_id):
 
     row = [message['time'], message["component"], message["direction"], message["leg_id"], message['sequence_id'], message['model']]
     if message["component"] == "llm":
-        component_details = [message_data, message.get('input_tokens', 0), message.get('output_tokens', 0), None, message['cached'], None]
+        component_details = [message_data, message.get('input_tokens', 0), message.get('output_tokens', 0), None, message.get('latency', None), message['cached'], None]
     elif message["component"] == "transcriber":
-        component_details = [message_data, None, None, None, False ,message.get('is_final', False)]
+        component_details = [message_data, None, None, None, message.get('latency', None), False, message.get('is_final', False)]
     elif message["component"] == "synthesizer":
-        component_details = [message_data, None, None, len(message_data), message['cached'], None, message['engine']]
+        component_details = [message_data, None, None, len(message_data), message.get('latency', None), message['cached'], None, message['engine']]
 
     row = row + component_details
 
-    header = "Time,Component,Direction,Leg ID,Sequence ID,Model,Data,Input Tokens,Output Tokens,Characters,Cached,Final Transcript,Engine\n"
+    header = "Time,Component,Direction,Leg ID,Sequence ID,Model,Data,Input Tokens,Output Tokens,Characters,Latency,Cached,Final Transcript,Engine\n"
     log_string = ','.join(['"' + str(item).replace('"', '""') + '"' if item is not None else '' for item in row]) + '\n'
     log_dir = f"./logs/{run_id.split('#')[0]}"
     os.makedirs(log_dir, exist_ok=True)
@@ -508,3 +515,26 @@ def list_number_of_wav_files_in_directory(directory):
 def get_file_names_in_directory(directory):
     return os.listdir(directory)
 
+
+def convert_to_request_log(message, meta_info, model, component = "transcriber", direction = 'response', is_cached = False, engine=None, run_id = None):
+    log = dict()
+    log['direction'] = direction
+    log['data'] = message
+    log['leg_id'] = meta_info['request_id'] if "request_id" in meta_info else "1234"
+    log['time'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    log['component'] = component
+    log['sequence_id'] = meta_info['sequence_id']
+    log['model'] = model
+    log['cached'] = is_cached
+    if component == "llm":
+        log['latency'] = meta_info.get('llm_latency', None) if direction == "response" else None
+    if component == "synthesizer":
+        log['latency'] = meta_info.get('synthesizer_latency', None) if direction == "response" else None
+    if component == "transcriber":
+        log['latency'] = meta_info.get('transcriber_latency', None) if direction == "response" else None
+        if 'is_final' in meta_info and meta_info['is_final']:
+            log['is_final'] = True
+    else:
+        log['is_final'] = False #This is logged only for users to know final transcript from the transcriber
+    log['engine'] = engine
+    asyncio.create_task(write_request_logs(log, run_id))

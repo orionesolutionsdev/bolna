@@ -31,3 +31,27 @@ ACCIDENTAL_INTERRUPTION_PHRASES = [
     "cease", "halt", "silence", "enough", "excuse", "hold on", "hang on", "cut it", 
     "that's enough", "shush", "listen", "excuse me", "hold up", "not now", "stop there", "stop speaking"
 ]
+
+PRE_FUNCTIONAL_CALL_MESSAGE = "Just give me a moment, I'll do that and will be back with you"
+
+FILLER_PHRASES = [
+    "No worries.", "It's fine.", "I'm here.", "No rush.", "Take your time.",
+    "Great!", "Awesome!", "Fantastic!", "Wonderful!", "Perfect!", "Excellent!",
+    "I get it.", "Noted.", "Alright.", "I understand.", "Understood.", "Got it.",
+    "Sure.", "Okay.", "Right.", "Absolutely.", "Sure thing.",
+    "I see.", "Gotcha.", "Makes sense."
+]
+
+FILLER_DICT = {
+  "Unsure": ["No worries.", "It's fine.", "I'm here.", "No rush.", "Take your time."],
+  "Positive": ["Great!", "Awesome!", "Fantastic!", "Wonderful!", "Perfect!", "Excellent!"],
+  "Negative": ["I get it.", "Noted.", "Alright.", "I understand.", "Understood.", "Got it."],
+  "Neutral": ["Sure.", "Okay.", "Right.", "Absolutely.", "Sure thing."],
+  "Explaining": ["I see.", "Gotcha.", "Makes sense."],
+  "Greeting": ["Hello!", "Hi there!", "Hi!", "Hey!"],
+  "Farewell": ["Goodbye!", "Thank you!", "Take care!", "Bye!"],
+  "Thanking": ["Welcome!", "No worries!"],
+  "Apology": ["I'm sorry.", "My apologies.", "I apologize.", "Sorry."],
+  "Clarification": ["Please clarify.", "Can you explain?", "More details?", "Can you elaborate?"],
+  "Confirmation": ["Got it.", "Okay.", "Understood."]
+}

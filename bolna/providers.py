@@ -1,7 +1,7 @@
-from .synthesizer import PollySynthesizer, XTTSSynthesizer, ElevenlabsSynthesizer, OPENAISynthesizer, FourieSynthesizer, DeepgramSynthesizer
+from .synthesizer import PollySynthesizer, XTTSSynthesizer, ElevenlabsSynthesizer, OPENAISynthesizer, FourieSynthesizer, DeepgramSynthesizer, MeloSynthesizer, StylettsSynthesizer
 from .transcriber import DeepgramTranscriber, WhisperTranscriber
-from .input_handlers import DefaultInputHandler, TwilioInputHandler, ExotelInputHandler
-from .output_handlers import DefaultOutputHandler, TwilioOutputHandler, ExotelOutputHandler
+from .input_handlers import DefaultInputHandler, TwilioInputHandler, ExotelInputHandler, PlivoInputHandler, DailyInputHandler
+from .output_handlers import DefaultOutputHandler, TwilioOutputHandler, ExotelOutputHandler, PlivoOutputHandler, DailyOutputHandler
 from .llms import OpenAiLLM, LiteLLM
 
 SUPPORTED_SYNTHESIZER_MODELS = {
@@ -10,7 +10,9 @@ SUPPORTED_SYNTHESIZER_MODELS = {
     'elevenlabs': ElevenlabsSynthesizer,
     'openai': OPENAISynthesizer,
     'fourie': FourieSynthesizer,
-    'deepgram': DeepgramSynthesizer
+    'deepgram': DeepgramSynthesizer,
+    'meloTTS': MeloSynthesizer,
+    'styletts': StylettsSynthesizer
 }
 SUPPORTED_TRANSCRIBER_MODELS = {
     'deepgram': DeepgramTranscriber,
@@ -26,26 +28,35 @@ SUPPORTED_LLM_PROVIDERS = {
     'fireworks': LiteLLM,
     'azure-openai': LiteLLM,
     'perplexity': LiteLLM,
-    'vllm': OpenAiLLM,
+    'vllm': LiteLLM,
     'anyscale': LiteLLM,
     'custom': OpenAiLLM,
-    'ola': OpenAiLLM
+    'ola': OpenAiLLM,
+    'groq': LiteLLM
 }
 SUPPORTED_INPUT_HANDLERS = {
     'default': DefaultInputHandler,
     'twilio': TwilioInputHandler,
-    'exotel': ExotelInputHandler
+    'exotel': ExotelInputHandler,
+    'plivo': PlivoInputHandler,
+    'daily': DailyInputHandler
 }
 SUPPORTED_INPUT_TELEPHONY_HANDLERS = {
     'twilio': TwilioInputHandler,
-    'exotel': ExotelInputHandler
+    'exotel': ExotelInputHandler,
+    'plivo': PlivoInputHandler,
+    'daily': DailyInputHandler
 }
 SUPPORTED_OUTPUT_HANDLERS = {
     'default': DefaultOutputHandler,
     'twilio': TwilioOutputHandler,
-    'exotel': ExotelOutputHandler
+    'exotel': ExotelOutputHandler,
+    'plivo': PlivoOutputHandler,
+    'daily': DailyOutputHandler
 }
 SUPPORTED_OUTPUT_TELEPHONY_HANDLERS = {
     'twilio': TwilioOutputHandler,
-    'exotel': ExotelOutputHandler
+    'exotel': ExotelOutputHandler,
+    'plivo': PlivoOutputHandler,
+    'daily': DailyOutputHandler
 }
