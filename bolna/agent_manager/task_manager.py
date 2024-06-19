@@ -390,7 +390,6 @@ class TaskManager(BaseManager):
             raise "Other input handlers not supported yet"
 
     def __setup_transcriber(self):
-        
         if self.task_config["tools_config"]["transcriber"] is not None:
             logger.info("Setting up transcriber")
             provider = "playground" if self.turn_based_conversation else self.task_config["tools_config"]["input"][

@@ -8,7 +8,6 @@ from dotenv import load_dotenv
 import redis.asyncio as redis
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import PlainTextResponse
-
 from vo_utils.database_utils import db
 from datetime import datetime
 from config import settings
