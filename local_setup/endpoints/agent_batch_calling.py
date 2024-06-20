@@ -97,7 +97,7 @@ async def create_batch(agent_id: str = Form(...), file: UploadFile = File(...)):
 async def schedule_task(batch_id: str = Form(...), schedule_seconds: int =30):
     global schedule_start_seconds
     schedule_start_seconds = schedule_seconds  # Update schedule_seconds globally
-    tasks_cursor = db['batches'].find({"batch_id": batch_id})
+    tasks_cursor = db[settings.BATCH_COLLECTION].find({"batch_id": batch_id})
     for task in list(tasks_cursor):
         phone_number = task.get("recipient_phone_number")
         username = task.get("username")
