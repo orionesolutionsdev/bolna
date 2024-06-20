@@ -9,8 +9,13 @@ from datetime import datetime, timezone
 import asyncio
 import httpx
 import requests
+import time
 
 router = APIRouter()
+
+schedule_start_seconds = 5
+gap_bw_call_seconds = 300
+task_queue = asyncio.Queue()
 
 
 class Contact(BaseModel):
@@ -33,6 +38,12 @@ def get_app_callback_url():
 
 
 app_callback_url = get_app_callback_url()
+
+
+@router.on_event("startup")
+async def startup_event():
+    # Start the worker coroutine
+    asyncio.create_task(process_task(schedule_start_seconds))
 
 
 @router.post("/batches")
@@ -83,52 +94,38 @@ async def create_batch(agent_id: str = Form(...), file: UploadFile = File(...)):
 
 
 @router.post("/batches/schedule")
-async def schedule_task(batch_id: str = Form(...), scheduled_at: datetime = Form(...)):
-    # Calculate the delay until the scheduled_at datetime
-    current_time = datetime.now(timezone.utc)
-    # delay = (scheduled_at - current_time).total_seconds()
-    delay = 10
-    if delay <= 0:
-        raise HTTPException(
-            status_code=400, detail="Scheduled time must be in the future"
-        )
-    
-    print(delay)
-    # Fetch data from MongoDB based on batch_id
-    tasks_cursor = db[settings.BATCH_COLLECTION].find({"batch_id": batch_id})
-
-
+async def schedule_task(batch_id: str = Form(...), schedule_seconds: int =30):
+    global schedule_start_seconds
+    schedule_start_seconds = schedule_seconds  # Update schedule_seconds globally
+    tasks_cursor = db['batches'].find({"batch_id": batch_id})
     for task in list(tasks_cursor):
         phone_number = task.get("recipient_phone_number")
         username = task.get("username")
         agent_id = task.get("agent_id")
-        print(phone_number)
-        print(username)
-        print(agent_id)
-        # Schedule the task asynchronously
-        # await asyncio.sleep(delay)
-        process_task(agent_id, phone_number, username)
-        # asyncio.create_task(process_task(agent_id, phone_number, username))
-
-    # return JSONResponse(content={"message": "success", "state": "scheduled"})
+        await task_queue.put((agent_id, phone_number, username))
+    return JSONResponse(content={"message": "success", "state": "scheduled"})
 
 
-async def process_task(agent_id, recipient_phone_number, username):
-    # Simulate making API calls or any other task processing
-    async with httpx.AsyncClient() as client:
+async def process_task(schedule_start_seconds):
+    await asyncio.sleep(schedule_start_seconds)
+    while True:
+        agent_id, phone_number, username = await task_queue.get()
+        print(f"Processing task for agent_id: {agent_id}, phone_number: {phone_number}, username: {username}")
+        try:
+            print(f"Processing task for agent_id: {agent_id}, phone_number: {phone_number}, username: {username}")
+            url = app_callback_url+ "/call"
+            print(url)
+            payload = {
+                "agent_id": agent_id,
+                "recipient_phone_number": phone_number,
+                "recipient_data": {"username": username},
+            }
+            # response = requests.post(url, json=payload)
 
-        # Example of making a POST request to an API endpoint
-        url = app_callback_url + "/call"
-        payload = {
-            "agent_id": agent_id,
-            "recipient_phone_number": recipient_phone_number,
-            "recipient_data": {"username": username},
-        }
-        print(payload)
-        print(url)
-        # response = await client.post(url, json=payload)
-        # print(
-        #     f"API call result for {recipient_phone_number}: {response.status_code}"
-        # )
-        await asyncio.sleep(3)
+            async with httpx.AsyncClient() as client:
+                response = await client.post(url, json=payload)
+                print(f"API call result for {phone_number}: {response.status_code}")
+            time.sleep(gap_bw_call_seconds)
+        finally:
+            task_queue.task_done()
 
