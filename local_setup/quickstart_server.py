@@ -1,12 +1,19 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from vo_utils.clerk_auth_utils import CustomAuthMiddleware
-from endpoints import agent_functions, agent_llm_providers, agent_voices, agent_executions
+from endpoints import (
+    agent_functions,
+    agent_llm_providers,
+    agent_voices,
+    agent_executions,
+    agent_batch_calling
+)
 from bolna.helpers.logger_config import configure_logger
 from bolna.models import *
 from vo_utils.database_utils import db
 from config import settings
 import sentry_sdk
+
 logger = configure_logger(__name__)
 
 app = FastAPI()
@@ -16,10 +23,16 @@ app.add_middleware(
     allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"]
+    allow_headers=["*"],
 )
 
-for endpoint in  [ agent_functions, agent_llm_providers, agent_voices, agent_executions ]:
+for endpoint in [
+    agent_functions,
+    agent_llm_providers,
+    agent_voices,
+    agent_executions,
+    agent_batch_calling
+]:
     app.include_router(endpoint.router)
 
 try:
