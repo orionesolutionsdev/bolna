@@ -80,7 +80,7 @@ async def make_call(request: Request):
             from_=from_number,
             url=f"{app_callback_url}/twilio_callback?ws_url={websocket_url}&agent_id={agent_id}&context_id={context_id}",
             method="POST",
-            record=False
+            record=True
         )
 
         return PlainTextResponse("done", status_code=200)

@@ -4,7 +4,6 @@ import uuid
 from dotenv import load_dotenv
 from bolna.helpers.logger_config import configure_logger
 
-
 load_dotenv()
 logger = configure_logger(__name__)
 

@@ -4,41 +4,60 @@ from dotenv import load_dotenv
 from bolna.helpers.logger_config import configure_logger
 from bolna.helpers.utils import create_ws_data_packet
 from .base_synthesizer import BaseSynthesizer
+import base64
+import json
 
 logger = configure_logger(__name__)
 load_dotenv()
-DEEPGRAM_HOST = os.getenv('DEEPGRAM_HOST', 'api.deepgram.com')
-DEEPGRAM_TTS_URL = "https://{}/v1/speak".format(DEEPGRAM_HOST)
 
 
-class DeepgramSynthesizer(BaseSynthesizer):
-    def __init__(self, voice, audio_format="pcm", sampling_rate="8000", stream=False, buffer_size=400,
+
+
+class StylettsSynthesizer(BaseSynthesizer):
+    def __init__(self, audio_format="pcm", sampling_rate="8000", stream=False, buffer_size=400,
                  **kwargs):
         super().__init__(stream, buffer_size)
         self.format = "linear16" if audio_format == "pcm" else audio_format
-        self.voice = voice
-        self.sample_rate = str(sampling_rate)
+        self.voice = kwargs.get('voice', "Jess")
+        self.sample_rate = int(sampling_rate)
         self.first_chunk_generated = False
-        self.api_key = kwargs.get("transcriber_key", os.getenv('DEEPGRAM_AUTH_TOKEN'))
+
+        STYLE_TTS2_VOCE_MAPPING = {
+            "Jess": 'default'
+        }
+        self.voice_id = STYLE_TTS2_VOCE_MAPPING.get(self.voice,'default')
+        self.rate = kwargs.get('rate')
+        self.alpha = kwargs.get('alpha')
+        self.beta = kwargs.get('beta')
+        self.diffusion_steps = kwargs.get('diffusion_steps')
+        self.embedding_scale = kwargs.get('embedding_scale')
+        
+
+        self.STYLE_TTS_HOST = os.getenv('STYLE_TTS')
 
     async def __generate_http(self, text):
         headers = {
-            "Authorization": "Token {}".format(self.api_key),
-            "Content-Type": "application/json"
+            'accept': 'application/json',
+            'Content-Type': 'application/json',
         }
-        url = DEEPGRAM_TTS_URL + "?encoding={}&container=none&sample_rate={}&model={}".format(
-            self.format, self.sample_rate, self.voice
-        )
+
 
         payload = {
-            "text": text
+            'text': text,
+            'rate':self.rate,
+            'voice_id': self.voice_id,
+            'alpha': self.alpha,
+            'beta': self.beta,
+            'diffusion_steps': self.diffusion_steps,
+            'embedding_scale': self.embedding_scale
         }
 
         async with aiohttp.ClientSession() as session:
             if payload is not None:
-                async with session.post(url, headers=headers, json=payload) as response:
+                async with session.post(self.STYLE_TTS_HOST, headers=headers, json=payload) as response:
                     if response.status == 200:
-                        chunk = await response.read()
+                        res_json:dict = json.loads(await response.text())
+                        chunk = base64.b64decode(res_json["audio"])
                         yield chunk
             else:
                 logger.info("Payload was null")
