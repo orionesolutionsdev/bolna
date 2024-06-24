@@ -7,14 +7,13 @@ from config import settings
 import csv
 from datetime import datetime, timezone
 import asyncio
-import httpx
 import requests
 import time
 
 router = APIRouter()
 
 schedule_start_seconds = 5
-gap_bw_call_seconds = 300
+gap_bw_call_seconds = 60
 task_queue = asyncio.Queue()
 
 
@@ -98,7 +97,7 @@ async def schedule_task(batch_id: str = Form(...), schedule_seconds: int =30):
     global schedule_start_seconds
     schedule_start_seconds = schedule_seconds  # Update schedule_seconds globally
     tasks_cursor = db[settings.BATCH_COLLECTION].find({"batch_id": batch_id})
-    for task in list(tasks_cursor):
+    for task in list(tasks_cursor)[:2]:
         phone_number = task.get("recipient_phone_number")
         username = task.get("username")
         agent_id = task.get("agent_id")
@@ -120,11 +119,11 @@ async def process_task(schedule_start_seconds):
                 "recipient_phone_number": phone_number,
                 "recipient_data": {"username": username},
             }
-            # response = requests.post(url, json=payload)
+            response = requests.post(url, json=payload)
 
-            async with httpx.AsyncClient() as client:
-                response = await client.post(url, json=payload)
-                print(f"API call result for {phone_number}: {response.status_code}")
+            # async with httpx.AsyncClient() as client:
+                # response = await client.post(url, json=payload)
+            print(f"API call result for {phone_number}: {response.status_code}")
             time.sleep(gap_bw_call_seconds)
         finally:
             task_queue.task_done()

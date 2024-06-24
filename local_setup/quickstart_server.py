@@ -31,7 +31,7 @@ for endpoint in [
     agent_llm_providers,
     agent_voices,
     agent_executions,
-    agent_batch_calling
+    # agent_batch_calling
 ]:
     app.include_router(endpoint.router)
 

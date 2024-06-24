@@ -30,7 +30,11 @@ app.add_middleware(
 # Initialize Twilio client
 twilio_client = Client(twilio_account_sid, twilio_auth_token)
 
+from endpoints import agent_batch_calling
+for endpoint in [agent_batch_calling]:
+    app.include_router(endpoint.router)
 
+    
 def populate_ngrok_tunnels():
     response = requests.get("http://ngrok:4040/api/tunnels")  # ngrok interface
     app_callback_url, websocket_url = None, None
