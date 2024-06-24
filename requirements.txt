@@ -25,3 +25,7 @@ huggingface-hub
 semantic-router
 sentence_transformers
 optimum[onnxruntime]
+pymongo==4.7.2
+pydantic-settings==2.2.1
+motor==3.4.0
+python-jose==3.3.0

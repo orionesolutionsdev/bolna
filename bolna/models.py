@@ -143,7 +143,6 @@ class LLM(BaseModel):
     extraction_details: Optional[str] = None
     summarization_details: Optional[str] = None
 
-
 class MessagingModel(BaseModel):
     provider: str
     template: str
