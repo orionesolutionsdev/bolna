@@ -46,6 +46,7 @@ class FourieConfig(BaseModel):
 
 class DeepgramConfig(BaseModel):
     voice: str
+    model: str
 
 
 class MeloConfig(BaseModel):
@@ -60,7 +61,6 @@ class MeloConfig(BaseModel):
 class StylettsConfig(BaseModel):
     voice: str
     rate: int = 8000
-    voice_id: str = 'Jess'
     alpha: float = 0.3
     beta: float = 0.7
     diffusion_steps: int = 5
@@ -68,17 +68,17 @@ class StylettsConfig(BaseModel):
 
 
 class Transcriber(BaseModel):
-    model: str
+    model: Optional[str] = "nova-2"
     language: Optional[str] = None
     stream: bool = False
     sampling_rate: Optional[int] = 16000
     encoding: Optional[str] = "linear16"
     endpointing: Optional[int] = 400
     keywords: Optional[str] = None
-    modeltype: Optional[str] = "whisper-tiny"
     task:Optional[str] = "transcribe"
+    provider: Optional[str] = "deepgram"
 
-    @validator("model")
+    @validator("provider")
     def validate_model(cls, value):
         return validate_attribute(value, list(SUPPORTED_TRANSCRIBER_MODELS.keys()))
 
@@ -89,7 +89,7 @@ class Transcriber(BaseModel):
 
 class Synthesizer(BaseModel):
     provider: str
-    provider_config: Union[PollyConfig, XTTSConfig, ElevenLabsConfig, OpenAIConfig, FourieConfig, StylettsConfig,  MeloConfig, DeepgramConfig] = Field(union_mode='left_to_right')
+    provider_config: Union[PollyConfig, XTTSConfig, ElevenLabsConfig, OpenAIConfig, FourieConfig, MeloConfig, StylettsConfig, DeepgramConfig] = Field(union_mode='smart')
     stream: bool = False
     buffer_size: Optional[int] = 40  # 40 characters in a buffer
     audio_format: Optional[str] = "pcm"
@@ -97,7 +97,7 @@ class Synthesizer(BaseModel):
 
     @validator("provider")
     def validate_model(cls, value):
-        return validate_attribute(value, ["polly", "xtts", "elevenlabs", "openai", "deepgram", "meloTTS", "styletts"])
+        return validate_attribute(value, ["polly", "xtts", "elevenlabs", "openai", "deepgram", "melotts", "styletts"])
 
 
 class IOModel(BaseModel):

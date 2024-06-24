@@ -11,9 +11,16 @@ SUPPORTED_SYNTHESIZER_MODELS = {
     'openai': OPENAISynthesizer,
     'fourie': FourieSynthesizer,
     'deepgram': DeepgramSynthesizer,
-    'meloTTS': MeloSynthesizer,
+    'melotts': MeloSynthesizer,
     'styletts': StylettsSynthesizer
 }
+
+SUPPORTED_TRANSCRIBER_PROVIDERS = {
+    'deepgram': DeepgramTranscriber,
+    'whisper': WhisperTranscriber 
+}
+
+#Backwards compatibility
 SUPPORTED_TRANSCRIBER_MODELS = {
     'deepgram': DeepgramTranscriber,
     'whisper': WhisperTranscriber #Seperate out a transcriber for https://github.com/bolna-ai/streaming-transcriber-server or build a deepgram compatible proxy
@@ -32,7 +39,8 @@ SUPPORTED_LLM_PROVIDERS = {
     'anyscale': LiteLLM,
     'custom': OpenAiLLM,
     'ola': OpenAiLLM,
-    'groq': LiteLLM
+    'groq': LiteLLM,
+    'anthropic': LiteLLM
 }
 SUPPORTED_INPUT_HANDLERS = {
     'default': DefaultInputHandler,
