@@ -19,6 +19,7 @@ class DefaultInputHandler:
         self.turn_based_conversation = turn_based_conversation
         self.queue = queue
         self.conversation_recording = conversation_recording
+        
     async def stop_handler(self):
         self.running = False
         try:

@@ -265,7 +265,7 @@ class TaskManager(BaseManager):
                         self.filenames = get_file_names_in_directory(self.backchanneling_audios)
                         logger.info(f"Backchanneling audio location {self.backchanneling_audios}")
                     except Exception as e:
-                        logger.info(f"Something went wrong an putting should backchannel to false")
+                        logger.error(f"Something went wrong an putting should backchannel to false")
                         self.should_backchannel = False
                 else:
                     logger.info(f"Not setting up backchanneling")
@@ -390,19 +390,28 @@ class TaskManager(BaseManager):
             raise "Other input handlers not supported yet"
 
     def __setup_transcriber(self):
-        if self.task_config["tools_config"]["transcriber"] is not None:
-            logger.info("Setting up transcriber")
-            provider = "playground" if self.turn_based_conversation else self.task_config["tools_config"]["input"][
-                "provider"]
-            self.task_config["tools_config"]["transcriber"]["input_queue"] = self.audio_queue
-            self.task_config['tools_config']["transcriber"]["output_queue"] = self.transcriber_output_queue
-            if self.task_config["tools_config"]["transcriber"]["model"] in SUPPORTED_TRANSCRIBER_MODELS.keys():
-                if self.turn_based_conversation:
-                    self.task_config["tools_config"]["transcriber"]["stream"] = True if self.enforce_streaming else False
-                    logger.info(f'self.task_config["tools_config"]["transcriber"]["stream"] {self.task_config["tools_config"]["transcriber"]["stream"]} self.enforce_streaming {self.enforce_streaming}')
-                transcriber_class = SUPPORTED_TRANSCRIBER_MODELS.get(
-                    self.task_config["tools_config"]["transcriber"]["model"])
-                self.tools["transcriber"] = transcriber_class(provider, **self.task_config["tools_config"]["transcriber"], **self.kwargs)
+        try:
+            if self.task_config["tools_config"]["transcriber"] is not None:
+                logger.info("Setting up transcriber")
+                provider = "playground" if self.turn_based_conversation else self.task_config["tools_config"]["input"][
+                    "provider"]
+                self.task_config["tools_config"]["transcriber"]["input_queue"] = self.audio_queue
+                self.task_config['tools_config']["transcriber"]["output_queue"] = self.transcriber_output_queue
+                
+                # Checking models for backwards compatibility
+                if self.task_config["tools_config"]["transcriber"]["model"] in SUPPORTED_TRANSCRIBER_MODELS.keys() or self.task_config["tools_config"]["transcriber"]["provider"] in SUPPORTED_TRANSCRIBER_PROVIDERS.keys():
+                    if self.turn_based_conversation:
+                        self.task_config["tools_config"]["transcriber"]["stream"] = True if self.enforce_streaming else False
+                        logger.info(f'self.task_config["tools_config"]["transcriber"]["stream"] {self.task_config["tools_config"]["transcriber"]["stream"]} self.enforce_streaming {self.enforce_streaming}')
+                    if 'provider' in self.task_config["tools_config"]["transcriber"]:
+                        transcriber_class = SUPPORTED_TRANSCRIBER_PROVIDERS.get(
+                            self.task_config["tools_config"]["transcriber"]["provider"])
+                    else:
+                        transcriber_class = SUPPORTED_TRANSCRIBER_MODELS.get(
+                            self.task_config["tools_config"]["transcriber"]["model"])
+                    self.tools["transcriber"] = transcriber_class( provider, **self.task_config["tools_config"]["transcriber"], **self.kwargs)
+        except Exception as e:
+            logger.error(f"Something went wrong with starting transcriber {e}")
 
     def __setup_synthesizer(self, llm_config):
         logger.info(f"Synthesizer config: {self.task_config['tools_config']['synthesizer']}")
@@ -645,6 +654,7 @@ class TaskManager(BaseManager):
             logger.info(f"DOING THE POST REQUEST TO WEBHOOK {self.input_parameters['extraction_details']}")
             self.webhook_response = await self.tools["webhook_agent"].execute(self.input_parameters['extraction_details'])
             logger.info(f"Response from the server {self.webhook_response}")
+        
         else:
             message = format_messages(self.input_parameters["messages"])  # Remove the initial system prompt
             self.history.append({
@@ -661,6 +671,7 @@ class TaskManager(BaseManager):
                 self.summarized_data = json_data["summary"]
                 logger.info(f"self.summarize {self.summarized_data}")
             else:
+                logger.info(f"Extraction task output {json_data}")
                 json_data = clean_json_string(json_data)
                 logger.info(f"After replacing {json_data}")
                 if type(json_data) is not dict:
@@ -1440,7 +1451,7 @@ class TaskManager(BaseManager):
                     meta_info={'io': 'default', "request_id": str(uuid.uuid4()), "cached": False, "sequence_id": -1, 'format': 'wav'}
                     await self._synthesize(create_ws_data_packet("Hey, are you still there?", meta_info= meta_info))
                 else:
-                    meta_info={'io': 'twilio', "request_id": str(uuid.uuid4()), "cached": False, "sequence_id": -1, 'format': 'pcm'}
+                    meta_info={'io': self.tools["output"].get_provider(), "request_id": str(uuid.uuid4()), "cached": False, "sequence_id": -1, 'format': 'pcm'}
                     await self._synthesize(create_ws_data_packet("Hey, are you still there?", meta_info= meta_info))
                 
                 #Just in case we need to clear messages sent before 
@@ -1499,7 +1510,7 @@ class TaskManager(BaseManager):
                 meta_info={'io': 'default', 'message_category': 'ambient_noise', "request_id": str(uuid.uuid4()), "sequence_id": -1, "type":'audio', 'format': 'wav'}
             else:
 
-                meta_info={'io': 'twilio', 'message_category': 'ambient_noise', 'stream_sid': self.stream_sid , "request_id": str(uuid.uuid4()), "cached": True, "type":'audio', "sequence_id": -1, 'format': 'pcm'}
+                meta_info={'io': self.tools["output"].get_provider(), 'message_category': 'ambient_noise', 'stream_sid': self.stream_sid , "request_id": str(uuid.uuid4()), "cached": True, "type":'audio', "sequence_id": -1, 'format': 'pcm'}
             while True:
                 logger.info(f"Before yielding ambient noise")
                 for chunk in yield_chunks_from_memory(audio, self.output_chunk_size*2 ):
