@@ -8,6 +8,7 @@ COPY vo_utils /app/vo_utils
 
 RUN pip install --no-cache-dir -r requirements.txt
 RUN pip install pymongo==4.7.2
+RUN pip install motor==3.4.0
 RUN pip install pydantic-settings==2.3.0
 EXPOSE 8001
 
