@@ -1,6 +1,7 @@
 
 # JWKS_URL = os.getenv('JWKS_URL')
-JWKS_URL= "https://civil-marmoset-57.clerk.accounts.dev/.well-known/jwks.json"
+from config import settings
+# JWKS_URL= "https://civil-marmoset-57.clerk.accounts.dev/.well-known/jwks.json"
 from jose import jwt
 import requests
 from fastapi.exceptions import HTTPException
@@ -11,7 +12,7 @@ from starlette.requests import Request
 
 
 def get_jwks():
-    response = requests.get(JWKS_URL)
+    response = requests.get(settings.JWKS_URL)
     if response.status_code != 200:
         raise HTTPException(status_code=response.status_code, detail="Failed to validate token")
     return response.json()
