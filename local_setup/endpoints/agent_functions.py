@@ -86,6 +86,8 @@ async def get_all_agents(header:Request):
     agents_data = []
     user_id = get_user_id_from_Token(header)
     results = list(db[settings.MONGO_COLLECTION].find({"user_id": user_id}, {'_id':0}).sort('created_at', -1))
+    if len(results) == 0:
+        results = list(db[settings.MONGO_COLLECTION].find({"default": 1}, {'_id':0}).sort('created_at', -1))
     for agent in results:
         agent_id = agent.pop('agent_id')
         agents_data.append({'agent_id': agent_id, 'agent_config': agent})
