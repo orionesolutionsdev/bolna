@@ -28,6 +28,7 @@ class AgentModel(BaseModel):
     agent_type: str = "other"
     tasks: List[Task]
     agent_welcome_message: Optional[str] = AGENT_WELCOME_MESSAGE
+    default: Optional[int] = 0
 
 
 class AgentModelPrompt(BaseModel):
@@ -90,6 +91,15 @@ async def get_all_agents(header:Request):
         agents_data.append({'agent_id': agent_id, 'agent_config': agent})
     return JSONResponse(content= agents_data, status_code=200)
 
+
+@router.get("/agent/default_all")
+async def get_all_default_agents(header:Request):
+    agents_data = []
+    results = list(db[settings.MONGO_COLLECTION].find({"default": 1}, {'_id':0}).sort('created_at', -1))
+    for agent in results:
+        agent_id = agent.pop('agent_id')
+        agents_data.append({'agent_id': agent_id, 'agent_config': agent})
+    return JSONResponse(content= agents_data, status_code=200)
 
 @router.get("/agent/{agent_id}")
 async def get_agent(agent_id: str, header:Request):
