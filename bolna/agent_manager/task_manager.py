@@ -370,7 +370,7 @@ class TaskManager(BaseManager):
             if self.task_config["tools_config"]["input"]["provider"] == "daily":
                 input_kwargs['room_url'] = self.room_url
 
-            if True:
+            if should_record:
                 input_kwargs['conversation_recording'] = self.conversation_recording
 
             if self.turn_based_conversation:
@@ -1447,7 +1447,7 @@ class TaskManager(BaseManager):
             elif time_since_last_spoken_AI_word > 6 and not self.asked_if_user_is_still_there and self.time_since_last_spoken_human_word < self.last_transmitted_timesatamp :
                 logger.info(f"Asking if the user is still there")
                 self.asked_if_user_is_still_there = True
-                if True:
+                if self.should_record:
                     meta_info={'io': 'default', "request_id": str(uuid.uuid4()), "cached": False, "sequence_id": -1, 'format': 'wav'}
                     await self._synthesize(create_ws_data_packet("Hey, are you still there?", meta_info= meta_info))
                 else:
@@ -1506,7 +1506,7 @@ class TaskManager(BaseManager):
             if self.task_config["tools_config"]["output"]["provider"] in SUPPORTED_OUTPUT_TELEPHONY_HANDLERS.keys():
                 audio = wav_bytes_to_pcm(audio)
             logger.info(f"Length of audio {len(audio)} {self.sampling_rate}")
-            if True:
+            if self.should_record:
                 meta_info={'io': 'default', 'message_category': 'ambient_noise', "request_id": str(uuid.uuid4()), "sequence_id": -1, "type":'audio', 'format': 'wav'}
             else:
 
@@ -1617,9 +1617,11 @@ class TaskManager(BaseManager):
                   
                 if self.background_check_task is not None:
                     self.background_check_task.cancel()
-                    
+                
+                if self.first_message_task is not None:
+                    self.first_message_task.cancel()
             
-                if True:
+                if self.should_record:
                     output['recording_url'] = await save_audio_file_to_s3(self.conversation_recording, self.sampling_rate, self.assistant_id, self.run_id)
 
                 if self.task_config['tools_config']['output']['provider'] == "daily":
