@@ -10,7 +10,7 @@ COPY vo_utils /app/vo_utils
 RUN apt-get update && apt-get install libgomp1 git -y
 RUN apt-get -y update && apt-get -y upgrade && apt-get install -y --no-install-recommends ffmpeg
 RUN pip install -r requirements.txt
-RUN pip install --force-reinstall git+https://github.com/orionesolutionsdev/bolna@feature/extraction_details
+RUN pip install --force-reinstall git+https://github.com/orionesolutionsdev/bolna@development
 RUN pip install scipy==1.11.0
 RUN pip install torch==2.0.1
 RUN pip install torchaudio==2.0.1
