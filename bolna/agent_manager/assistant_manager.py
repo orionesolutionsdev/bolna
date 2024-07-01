@@ -36,7 +36,7 @@ def mongodb_connection():
 
 
 def twilio_client():
-    tw_client = Client(TWILIO_ACCOUNT_SID, TWILIO_ACCOUNT_SID)
+    tw_client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
     return tw_client
 
 
