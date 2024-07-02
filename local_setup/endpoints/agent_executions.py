@@ -14,8 +14,9 @@ async def get_agent(agent_id: str, header:Request):
     try:
         agent_data = db[settings.EXECUTION_COLLECTION].find({"agent_id": agent_id}, {'_id':0}).sort('created_at', -1)
         for agent in list(agent_data):
-                object_key = parse_s3_url(agent['recording_path'])
-                agent['recording_path'] = generate_presigned_url(s3_client, object_key)
+                if agent.get('recording_path'):
+                    object_key = parse_s3_url(agent['recording_path'])
+                    agent['recording_path'] = generate_presigned_url(s3_client, object_key)
                 result.append(agent)
         if result:
             return JSONResponse(content= result, status_code=200)
@@ -30,8 +31,9 @@ async def get_agent(agent_id: str, header:Request):
 async def get_agent(run_id: str, header:Request):
     try:
         agent_data = db[settings.EXECUTION_COLLECTION].find_one({"run_id": run_id}, {'_id':0})
-        object_key = parse_s3_url(agent_data['recording_path'])
-        agent_data['recording_path'] = generate_presigned_url(s3_client, object_key)
+        if agent_data.get("recording_path"):
+            object_key = parse_s3_url(agent_data['recording_path'])
+            agent_data['recording_path'] = generate_presigned_url(s3_client, object_key)
         if agent_data:
             return JSONResponse(content=agent_data, status_code=200)
         else:
