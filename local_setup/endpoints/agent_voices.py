@@ -13,6 +13,7 @@ class Voice(BaseModel):
     languageCode: str
     accent: str
     audio: str
+    gender: str
     lowLatency: bool
 
 # Initial voices data
