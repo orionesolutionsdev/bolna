@@ -28,13 +28,12 @@ async def get_agent(agent_id: str, header:Request):
 
 @router.get("/agent/executions/{run_id}")
 async def get_agent(run_id: str, header:Request):
-    result = []
     try:
         agent_data = db[settings.EXECUTION_COLLECTION].find_one({"run_id": run_id}, {'_id':0})
         object_key = parse_s3_url(agent_data['recording_path'])
         agent_data['recording_path'] = generate_presigned_url(s3_client, object_key)
-        if result:
-            return JSONResponse(content=result, status_code=200)
+        if agent_data:
+            return JSONResponse(content=agent_data, status_code=200)
         else:
             return JSONResponse(content={"message": "Run ID not found"}, status_code=404)
     except Exception as e:
