@@ -25,6 +25,7 @@ class Settings(BaseSettings):
     BATCH_COLLECTION : str = "batches"
     CALL_CONTEXTS: str = "call_contexts"
     EXECUTION_COLLECTION : str = "execution_metadata"
+    RECORDING_BUCKET_NAME : str = "mybot-development"
     JWKS_URL: str= "https://civil-marmoset-57.clerk.accounts.dev/.well-known/jwks.json"
     SENETRY_URL: str= 'https://bb616da6737c2a0dcdcf52aacdbcaf37@o4507378311495680.ingest.us.sentry.io/4507378318704640' # test_url
     model_config = SettingsConfigDict(env_file=".env")
