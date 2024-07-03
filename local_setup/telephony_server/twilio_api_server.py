@@ -91,7 +91,7 @@ async def make_call(request: Request):
             "to_phone": call.to
         }
 
-        return JSONResponse(content=response_data, status_code=500)
+        return JSONResponse(content=response_data, status_code=200)
 
     except Exception as e:
         print(f"Exception occurred in make_call: {e}")
