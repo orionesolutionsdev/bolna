@@ -12,6 +12,8 @@ from vo_utils.database_utils import db
 from datetime import datetime
 from config import settings
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+
 app = FastAPI()
 load_dotenv()
 port = 8001
@@ -83,7 +85,13 @@ async def make_call(request: Request):
             record=True
         )
 
-        return PlainTextResponse("done", status_code=200)
+        response_data = {
+            "agent_id": agent_id,
+            "sid": call.sid,
+            "to_phone": call.to
+        }
+
+        return JSONResponse(content=response_data, status_code=200)
 
     except Exception as e:
         print(f"Exception occurred in make_call: {e}")
