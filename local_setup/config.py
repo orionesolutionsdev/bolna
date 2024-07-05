@@ -26,6 +26,10 @@ class Settings(BaseSettings):
     CALL_CONTEXTS: str = "call_contexts"
     EXECUTION_COLLECTION : str = "execution_metadata"
     RECORDING_BUCKET_NAME : str = "mybot-development"
+    BATCH_COLLECTION: str= "batches"
+    CALL_QUEUE: str= "call_queues"
+    from_number:str = "+14159928208"
+    CALL_URL: str="https://call-twillio.customerdemourl.com/call"
     JWKS_URL: str= "https://civil-marmoset-57.clerk.accounts.dev/.well-known/jwks.json"
     SENETRY_URL: str= 'https://bb616da6737c2a0dcdcf52aacdbcaf37@o4507378311495680.ingest.us.sentry.io/4507378318704640' # test_url
     model_config = SettingsConfigDict(env_file=".env")
