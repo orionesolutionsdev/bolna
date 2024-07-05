@@ -11,6 +11,7 @@ from vo_utils.database_utils import db
 from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime, timedelta
 from config import settings
+from typing import Optional
 
 scheduler = BackgroundScheduler()
 scheduler.start()
@@ -24,7 +25,8 @@ class Contact(BaseModel):
 
 class batch_model(BaseModel):
     batch_id: str
-    delay: int = 200
+    scheduled_at: Optional[datetime] = None
+    delay_bw_call: Optional[int] = 300
 
 
 @router.post("/batches")
@@ -130,7 +132,7 @@ def scheduled_task(payload, queue_id):
     filter = {"queue_id": queue_id}
     update = {"$set": {"status": "progress"}}
     db[settings.CALL_QUEUE].update_one(filter, update)
-    response = requests.post(settings.APP_CALLBACK_URL, json=payload
+    response = requests.post(settings.CALL_URL, json=payload
     )
     if response.status_code == 200:
         update = {"$set": {"status": "completed"}}
@@ -152,10 +154,12 @@ def schedule_message(batch_model: batch_model):
     update = {"$set": {"batch_status": "progress"}}
     batch_data = db[settings.BATCH_COLLECTION].find_one(filter)
     if batch_data:
+        scheduled_at = batch_model.scheduled_at
+        if scheduled_at and scheduled_at < datetime.now():
+            raise HTTPException(status_code=400, detail="Scheduled time must be in the future")
         db[settings.BATCH_COLLECTION].update_one(filter, update)
         agent_id = batch_data.get("agent_id")
         user_data = batch_data.get("user_data")
-        delay = batch_model.delay
         for user in user_data:
             payload = {
                 "agent_id": agent_id,
@@ -163,13 +167,10 @@ def schedule_message(batch_model: batch_model):
                 "recipient_data": {"username": user.get("username")},
             }
             queue_id = user.get("queue_id")
-            run_time = datetime.now() + timedelta(seconds=delay)
-            print(delay)
-            print(payload)
             scheduler.add_job(
-                scheduled_task, "date", run_date=run_time, args=[payload, queue_id]
+                scheduled_task, "date", run_date=scheduled_at, args=[payload, queue_id]
             )
-            delay += 200
+            scheduled_at += timedelta(seconds=batch_model.delay_bw_call)
     else:
         batch_data = []
         return {"message": "Batch not found"}
