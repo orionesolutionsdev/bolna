@@ -1,21 +1,20 @@
-from fastapi import APIRouter, File, UploadFile, Form, HTTPException
+from fastapi import APIRouter, File, UploadFile, Form, HTTPException, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 import uuid
-from vo_utils.database_utils import db, async_db
-from config import settings
 import csv
-from datetime import datetime, timezone
-import asyncio
-import httpx
+from datetime import datetime
 import requests
-import time
+from config import settings
+from vo_utils.clerk_auth_utils import get_user_id_from_Token
+from vo_utils.database_utils import db
+from apscheduler.schedulers.background import BackgroundScheduler
+from datetime import datetime, timedelta
+from config import settings
 
+scheduler = BackgroundScheduler()
+scheduler.start()
 router = APIRouter()
-
-schedule_start_seconds = 5
-gap_bw_call_seconds = 300
-task_queue = asyncio.Queue()
 
 
 class Contact(BaseModel):
@@ -23,31 +22,19 @@ class Contact(BaseModel):
     username: str
 
 
-def get_app_callback_url():
-    response = requests.get("http://ngrok:4040/api/tunnels")  # ngrok interface
-    app_callback_url = None
-    if response.status_code == 200:
-        data = response.json()
-        for tunnel in data["tunnels"]:
-            if tunnel["name"] == "twilio-app":
-                app_callback_url = tunnel["public_url"]
-
-        return app_callback_url
-    else:
-        print(f"Error: Unable to fetch data. Status code: {response.status_code}")
-
-
-app_callback_url = get_app_callback_url()
-
-
-@router.on_event("startup")
-async def startup_event():
-    # Start the worker coroutine
-    asyncio.create_task(process_task(schedule_start_seconds))
+class batch_model(BaseModel):
+    batch_id: str
+    delay: int = 200
 
 
 @router.post("/batches")
-async def create_batch(agent_id: str = Form(...), file: UploadFile = File(...)):
+async def create_batch(
+    header: Request,
+    agent_id: str = Form(...),
+    file: UploadFile = File(...),
+    batch_name="Default",
+    from_number=settings.from_number,
+):
     if not file.filename.endswith(".csv"):
         raise HTTPException(
             status_code=400,
@@ -57,7 +44,6 @@ async def create_batch(agent_id: str = Form(...), file: UploadFile = File(...)):
     # Read the CSV file
     content = await file.read()
     content = content.decode("utf-8").splitlines()
-    print(content)
     csv_reader = csv.DictReader(content)
 
     # Validate CSV content
@@ -69,63 +55,122 @@ async def create_batch(agent_id: str = Form(...), file: UploadFile = File(...)):
 
     # Generate unique batch_id
     batch_id = str(uuid.uuid4())
+    user_id = get_user_id_from_Token(header)
 
     # Prepare data for MongoDB
-    contacts = []
+    batch_data = {}
+    user_data = []
+    queue_result = []
     for row in csv_reader:
+        queue_id = str(uuid.uuid4())
+
         contact = {
-            "batch_id": batch_id,
-            "agent_id": agent_id,
             "recipient_phone_number": row["recipient_phone_number"],
             "username": row["username"],
+            "queue_id": queue_id,
         }
-        contacts.append(contact)
+        call_queue = {
+            "agent_id": agent_id,
+            "batch_id": batch_id,
+            "queue_id": queue_id,
+            "user_id": user_id,
+            "batch_name": batch_name,
+            "created_at": datetime.now().isoformat(),
+            "phone_number": row["recipient_phone_number"],
+            "username": row["username"],
+            "status": "pending",
+        }
 
+        user_data.append(contact)
+        queue_result.append(call_queue)
+    batch_data["user_id"] = user_id
+    batch_data["agent_id"] = agent_id
+    batch_data["batch_name"] = batch_name
+    batch_data["batch_id"] = batch_id
+    batch_data["from_number"] = from_number
+    batch_data["user_data"] = user_data
+    batch_data["batch_status"] = "pending"
+    batch_data["created_at"] = datetime.now().isoformat()
     # Insert data into MongoDB
-    db[settings.BATCH_COLLECTION].insert_many(contacts)
-
+    db[settings.BATCH_COLLECTION].insert_one(batch_data)
+    db[settings.CALL_QUEUE].insert_many(queue_result)
     return JSONResponse(
         content={
             "batch_id": batch_id,
-            "status": "success",
+            "batch_name": batch_name,
+            "batch_status": "pending",
             "message": "Batch created successfully",
         }
     )
 
 
-@router.post("/batches/schedule")
-async def schedule_task(batch_id: str = Form(...), schedule_seconds: int =30):
-    global schedule_start_seconds
-    schedule_start_seconds = schedule_seconds  # Update schedule_seconds globally
-    tasks_cursor = db[settings.BATCH_COLLECTION].find({"batch_id": batch_id})
-    for task in list(tasks_cursor):
-        phone_number = task.get("recipient_phone_number")
-        username = task.get("username")
-        agent_id = task.get("agent_id")
-        await task_queue.put((agent_id, phone_number, username))
-    return JSONResponse(content={"message": "success", "state": "scheduled"})
+@router.get("/batches")
+async def get_batches(header: Request):
+    user_id = get_user_id_from_Token(header)
+    batches = list(
+        db[settings.BATCH_COLLECTION]
+        .find({"user_id": user_id}, {"_id": 0})
+        .sort("created_at", -1)
+    )
+    return JSONResponse(content=batches, status_code=200)
 
 
-async def process_task(schedule_start_seconds):
-    await asyncio.sleep(schedule_start_seconds)
-    while True:
-        agent_id, phone_number, username = await task_queue.get()
-        print(f"Processing task for agent_id: {agent_id}, phone_number: {phone_number}, username: {username}")
-        try:
-            print(f"Processing task for agent_id: {agent_id}, phone_number: {phone_number}, username: {username}")
-            url = app_callback_url+ "/call"
-            print(url)
+@router.get("/queues")
+async def get_call_queues(header: Request):
+    user_id = get_user_id_from_Token(header)
+    batches = list(
+        db[settings.CALL_QUEUE]
+        .find({"user_id": user_id}, {"_id": 0})
+        .sort("created_at", -1)
+    )
+    return JSONResponse(content=batches, status_code=200)
+
+
+def scheduled_task(payload, queue_id):
+    filter = {"queue_id": queue_id}
+    update = {"$set": {"status": "progress"}}
+    db[settings.CALL_QUEUE].update_one(filter, update)
+    response = requests.post(settings.APP_CALLBACK_URL, json=payload
+    )
+    if response.status_code == 200:
+        update = {"$set": {"status": "completed"}}
+        db[settings.CALL_QUEUE].update_one(filter, update)
+    else:
+        update = {"$set": {"status": "failed"}}
+        db[settings.CALL_QUEUE].update_one(filter, update)
+
+
+@router.get("/stop_all_tasks")
+async def stop_all_tasks():
+    scheduler.remove_all_jobs()
+    return {"message": "All tasks have been stopped successfully."}
+
+
+@router.post("/schedule_batch")
+def schedule_message(batch_model: batch_model):
+    filter = {"batch_id": batch_model.batch_id}
+    update = {"$set": {"batch_status": "progress"}}
+    batch_data = db[settings.BATCH_COLLECTION].find_one(filter)
+    if batch_data:
+        db[settings.BATCH_COLLECTION].update_one(filter, update)
+        agent_id = batch_data.get("agent_id")
+        user_data = batch_data.get("user_data")
+        delay = batch_model.delay
+        for user in user_data:
             payload = {
                 "agent_id": agent_id,
-                "recipient_phone_number": phone_number,
-                "recipient_data": {"username": username},
+                "recipient_phone_number": user.get("recipient_phone_number"),
+                "recipient_data": {"username": user.get("username")},
             }
-            # response = requests.post(url, json=payload)
-
-            async with httpx.AsyncClient() as client:
-                response = await client.post(url, json=payload)
-                print(f"API call result for {phone_number}: {response.status_code}")
-            time.sleep(gap_bw_call_seconds)
-        finally:
-            task_queue.task_done()
-
+            queue_id = user.get("queue_id")
+            run_time = datetime.now() + timedelta(seconds=delay)
+            print(delay)
+            print(payload)
+            scheduler.add_job(
+                scheduled_task, "date", run_date=run_time, args=[payload, queue_id]
+            )
+            delay += 200
+    else:
+        batch_data = []
+        return {"message": "Batch not found"}
+    return {"message": "Message will be scheduled to run in the background"}
