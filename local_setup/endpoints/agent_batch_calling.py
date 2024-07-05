@@ -174,4 +174,4 @@ def schedule_message(batch_model: batch_model):
     else:
         batch_data = []
         return {"message": "Batch not found"}
-    return {"message": "Message will be scheduled to run in the background"}
+    return {"message": "Batch will be scheduled to run in the background"}
