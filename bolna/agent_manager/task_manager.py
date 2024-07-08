@@ -234,6 +234,10 @@ class TaskManager(BaseManager):
                 self.last_transmitted_timesatamp = 0
                 self.let_remaining_audio_pass_through = False #Will be used to let remaining audio pass through in case of utterenceEnd event and there's still audio left to be sent
                 self.use_llm_to_determine_hangup = conversation_config.get("hangup_after_LLMCall", False)
+                string= "********************************"
+                logger.info(f"start{string}")
+                logger.info(f"Hangup after LLMCall: use_llm_to_determine_hangup  {self.use_llm_to_determine_hangup}")
+                logger.info(f"start{string}")
 
                 self.check_for_completion_prompt = conversation_config.get("call_cancellation_prompt", None)
                 if self.check_for_completion_prompt is not None:
@@ -251,6 +255,10 @@ class TaskManager(BaseManager):
                 #self.interruption_backoff_period = 1000 #conversation_config.get("interruption_backoff_period", 300) #this is the amount of time output loop will sleep before sending next audio
                 self.use_llm_for_hanging_up = conversation_config.get("hangup_after_LLMCall", False)
                 self.allow_extra_sleep = False #It'll help us to back off as soon as we hear interruption for a while
+                string= "********************************"
+                logger.info(f"start{string}")
+                logger.info(f"Hangup after LLMCall: use_llm_for_hanging_up {self.use_llm_to_determine_hangup}")
+                logger.info(f"start{string}")
 
                 #Backchanneling
                 self.should_backchannel = conversation_config.get("backchanneling", False)
