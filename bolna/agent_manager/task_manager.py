@@ -891,6 +891,8 @@ class TaskManager(BaseManager):
 
             # TODO : Write a better check for completion prompt 
             if self.use_llm_to_determine_hangup and not self.turn_based_conversation:
+                logger.info(f"##### Checking for completion prompt")
+
                 answer = await self.tools["llm_agent"].check_for_completion(self.history, self.check_for_completion_prompt)
                 should_hangup = answer['answer'].lower() == "yes"
                 prompt = [
