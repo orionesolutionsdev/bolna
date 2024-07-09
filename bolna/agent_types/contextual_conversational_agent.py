@@ -25,7 +25,12 @@ class StreamingContextualAgent(BaseAgent):
 
         answer = None
         response = await self.conversation_completion_llm.generate(prompt, request_json=True)
+
+        logger.info(f"#456 conversation_completion_llm response {response}")
+        print(type(response))
         answer = json.loads(response)
+        logger.info(f"#456 conversation_completion_llm response {response}")
+
 
         logger.info('Agent: {}'.format(answer['answer']))
         return answer
