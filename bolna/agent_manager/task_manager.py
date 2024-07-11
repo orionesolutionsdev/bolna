@@ -1501,7 +1501,7 @@ class TaskManager(BaseManager):
 
     async def __start_transmitting_ambient_noise(self):
         try:
-            logger.info(f'Sound Track Full Path : {os.getenv("AMBIENT_NOISE_PRESETS_DIR")}/{self.soundtrack}')
+
             audio = await get_raw_audio_bytes(f'{os.getenv("AMBIENT_NOISE_PRESETS_DIR")}/{self.soundtrack}', local= True, is_location=True)
             audio = resample(audio, self.sampling_rate, format = "wav")
             if self.task_config["tools_config"]["output"]["provider"] in SUPPORTED_OUTPUT_TELEPHONY_HANDLERS.keys():
