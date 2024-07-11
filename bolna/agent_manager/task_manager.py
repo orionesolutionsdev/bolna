@@ -277,7 +277,7 @@ class TaskManager(BaseManager):
                     self.transcriber_message = ''
                 
                 # Ambient noise
-                self.ambient_noise = conversation_config.get("ambient_noise", True)
+                self.ambient_noise = conversation_config.get("ambient_noise", False)
                 self.ambient_noise_task = None
                 if self.ambient_noise:
                     logger.info(f"Ambient noise is True {self.ambient_noise}")
