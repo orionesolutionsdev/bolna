@@ -16,6 +16,15 @@ services:
       - ../agent_data:/app/agent_data
       - $HOME/.aws/credentials:/root/.aws/credentials:ro
       - $HOME/.aws/config:/root/.aws/config:ro
+    develop:
+      watch:
+        - action: sync+restart
+          path: .
+          target: /app
+          ignore:
+            - requirements.txt
+            - telephony_server/
+            - dockerfile/
 
   # redis service used as a persistent storage
   redis:
@@ -52,16 +61,14 @@ services:
     env_file:
       - .env
 
-  plivo-app:
-    image: plivo-app:latest
-    build:
-      context: .
-      dockerfile: dockerfiles/plivo_server.Dockerfile
-    ports:
-      - "8002:8002"
-    depends_on:
-      - redis
-      - ngrok
-      - bolna-app
-    env_file:
-      - .env
+  # plivo-app:
+  #   image: plivo-app:latest
+  #   build:
+  #     context: .
+  #     dockerfile: dockerfiles/plivo_server.Dockerfile
+  #   ports:
+  #     - "8002:8002"
+  #   depends_on:
+  #     - redis 
+  #   env_file:
+  #     - .env

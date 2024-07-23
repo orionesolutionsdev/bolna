@@ -154,7 +154,6 @@ class LLM(BaseModel):
     backend: Optional[str] = "bolna"
     extra_config: Optional[OpenaiAssistants] = None
 
-
 class MessagingModel(BaseModel):
     provider: str
     template: str

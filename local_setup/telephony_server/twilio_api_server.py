@@ -8,7 +8,10 @@ from dotenv import load_dotenv
 import redis.asyncio as redis
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import PlainTextResponse
-
+from vo_utils.database_utils import db
+from datetime import datetime
+from config import settings
+from fastapi.middleware.cors import CORSMiddleware
 app = FastAPI()
 load_dotenv()
 port = 8001
@@ -17,6 +20,13 @@ twilio_account_sid = os.getenv('TWILIO_ACCOUNT_SID')
 twilio_auth_token = os.getenv('TWILIO_AUTH_TOKEN')
 twilio_phone_number = os.getenv('TWILIO_PHONE_NUMBER')
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"]
+)
 # Initialize Twilio client
 twilio_client = Client(twilio_account_sid, twilio_auth_token)
 
@@ -44,7 +54,16 @@ async def make_call(request: Request):
     try:
         call_details = await request.json()
         agent_id = call_details.get('agent_id', None)
-
+        from_number = call_details.get('from_number', twilio_phone_number)
+        recipient_data = call_details.get('recipient_data', None)
+        context_id =  str(uuid.uuid4())
+        data_for_db ={
+                    'context_id': context_id,
+                    'created_at': datetime.now().isoformat(),
+                    'recipient_data': recipient_data
+                    }
+    # redis_client.set(context_id, json.dumps(context_data))
+        db[settings.CALL_CONTEXTS].insert_one(data_for_db)
         if not agent_id:
             raise HTTPException(status_code=404, detail="Agent not provided")
         
@@ -76,6 +95,9 @@ async def make_call(request: Request):
 
 @app.post('/twilio_connect')
 async def twilio_connect(bolna_host: str = Query(...), agent_id: str = Query(...)):
+
+@app.post('/twilio_callback')
+async def twilio_callback(ws_url: str = Query(...), agent_id: str = Query(...), context_id: str = Query(...)):
     try:
         response = VoiceResponse()
 

@@ -164,7 +164,6 @@ agent_data/**/pcm
 agent_data/**/mp3
 
 
-*/__pycache__/
-*/*/__pycache__/
-logs/
-agent_data/
+/agent_data/**/
+
+
