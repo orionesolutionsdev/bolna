@@ -92,10 +92,6 @@ async def make_call(request: Request):
         print(f"Exception occurred in make_call: {e}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
 
-
-@app.post('/twilio_connect')
-async def twilio_connect(bolna_host: str = Query(...), agent_id: str = Query(...)):
-
 @app.post('/twilio_callback')
 async def twilio_callback(ws_url: str = Query(...), agent_id: str = Query(...), context_id: str = Query(...)):
     try:
