@@ -35,18 +35,18 @@ twilio_client = Client(twilio_account_sid, twilio_auth_token)
 
 def populate_ngrok_tunnels():
     response = requests.get("http://ngrok:4040/api/tunnels")  # ngrok interface
-    app_callback_url, websocket_url = None, None
+    telephony_url, bolna_url = None, None
 
     if response.status_code == 200:
         data = response.json()
 
         for tunnel in data['tunnels']:
             if tunnel['name'] == 'twilio-app':
-                app_callback_url = tunnel['public_url']
+                telephony_url = tunnel['public_url']
             elif tunnel['name'] == 'bolna-app':
-                websocket_url = tunnel['public_url'].replace('https:', 'wss:')
+                bolna_url = tunnel['public_url'].replace('https:', 'wss:')
 
-        return app_callback_url, websocket_url
+        return telephony_url, bolna_url
     else:
         print(f"Error: Unable to fetch data. Status code: {response.status_code}")
 
@@ -72,18 +72,21 @@ async def make_call(request: Request):
         if not call_details or "recipient_phone_number" not in call_details:
             raise HTTPException(status_code=404, detail="Recipient phone number not provided")
 
-        app_callback_url, websocket_url = populate_ngrok_tunnels()
+        telephony_host, bolna_host = populate_ngrok_tunnels()
 
-        print(f'app_callback_url: {app_callback_url}')
-        print(f'websocket_url: {websocket_url}')
+        print(f'telephony_host: {telephony_host}')
+        print(f'bolna_host: {bolna_host}')
 
-        call = twilio_client.calls.create(
-            to=call_details.get('recipient_phone_number'),
-            from_=from_number,
-            url=f"{app_callback_url}/twilio_callback?ws_url={websocket_url}&agent_id={agent_id}&context_id={context_id}",
-            method="POST",
-            record=True
-        )
+        try:
+            call = twilio_client.calls.create(
+                to=call_details.get('recipient_phone_number'),
+                from_=twilio_phone_number,
+                url=f"{telephony_host}/twilio_connect?bolna_host={bolna_host}&agent_id={agent_id}",
+                method="POST",
+                record=True
+            )
+        except Exception as e:
+            print(f'make_call exception: {str(e)}')
 
         response_data = {
             "agent_id": agent_id,
@@ -97,16 +100,15 @@ async def make_call(request: Request):
         print(f"Exception occurred in make_call: {e}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
 
-
 @app.post('/twilio_callback')
 async def twilio_callback(ws_url: str = Query(...), agent_id: str = Query(...), context_id: str = Query(...)):
     try:
         response = VoiceResponse()
 
         connect = Connect()
-        websocket_twilio_route = f'{ws_url}/chat/v1/{agent_id}/{context_id}'
-        connect.stream(url=websocket_twilio_route)
-        print(f"websocket connection done to {websocket_twilio_route}")
+        bolna_websocket_url = f'{bolna_host}/chat/v1/{agent_id}'
+        connect.stream(url=bolna_websocket_url)
+        print(f"websocket connection done to {bolna_websocket_url}")
         response.append(connect)
 
         return PlainTextResponse(str(response), status_code=200, media_type='text/xml')

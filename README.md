@@ -59,8 +59,8 @@ The setup consists of four containers:
 4. `redis`: for persisting agents & prompt data
 
 Use docker to build the images using `.env` file as the environment file and run them locally
-1. `docker-compose build --no-cache`: rebuild images
-2. `docker-compose up`: run the build images
+1. `docker-compose build --no-cache <twilio-app | plivo-app>`: rebuild images
+2. `docker-compose up <twilio-app | plivo-app>`: run the build images
 
 Once the docker containers are up, you can now start to create your agents and instruct them to initiate calls.
 
@@ -122,7 +122,7 @@ Once you have the above docker setup and running, you can create agents and init
                     "transcriber": {
                         "encoding": "linear16",
                         "language": "en",
-                        "model": "deepgram",
+                        "provider": "deepgram",
                         "stream": true
                     }
                 },
