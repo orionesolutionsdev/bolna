@@ -80,8 +80,8 @@ async def make_call(request: Request):
         try:
             call = twilio_client.calls.create(
                 to=call_details.get('recipient_phone_number'),
-                from_=twilio_phone_number,
-                url=f"{telephony_host}/twilio_connect?bolna_host={bolna_host}&agent_id={agent_id}",
+                from_=from_number,
+                url=f"{telephony_host}/twilio_callback?bolna_host={bolna_host}&agent_id={agent_id}&context_id={context_id}",
                 method="POST",
                 record=True
             )
@@ -101,12 +101,12 @@ async def make_call(request: Request):
         raise HTTPException(status_code=500, detail="Internal Server Error")
 
 @app.post('/twilio_callback')
-async def twilio_callback(ws_url: str = Query(...), agent_id: str = Query(...), context_id: str = Query(...)):
+async def twilio_callback(bolna_host: str = Query(...), agent_id: str = Query(...), context_id: str = Query(...)):
     try:
         response = VoiceResponse()
 
         connect = Connect()
-        bolna_websocket_url = f'{bolna_host}/chat/v1/{agent_id}'
+        bolna_websocket_url = f'{bolna_host}/chat/v1/{agent_id}/{context_id}'
         connect.stream(url=bolna_websocket_url)
         print(f"websocket connection done to {bolna_websocket_url}")
         response.append(connect)
