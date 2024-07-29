@@ -2,12 +2,6 @@ FROM python:3.10.13-slim
 
 WORKDIR /app
 COPY ./requirements.txt /app
-COPY ./quickstart_server.py /app
-COPY ./endpoints /app/endpoints
-COPY ./config.py /app/
-COPY vo_utils /app/vo_utils
-COPY ambient_music_files /app/ambient_music_files
-
 RUN apt-get update && apt-get install libgomp1 git -y
 RUN apt-get -y update && apt-get -y upgrade && apt-get install -y --no-install-recommends ffmpeg
 RUN pip install -r requirements.txt
@@ -23,5 +17,11 @@ RUN pip install python-multipart
 RUN pip install motor==3.4.0
 RUN pip install daily-python==0.9.1
 RUN pip install boto3
+
+COPY ./quickstart_server.py /app
+COPY ./endpoints /app/endpoints
+COPY ./config.py /app/
+COPY vo_utils /app/vo_utils
+COPY ambient_music_files /app/ambient_music_files
 EXPOSE 5001
 CMD ["uvicorn", "quickstart_server:app", "--host", "0.0.0.0", "--port", "5001"]
