@@ -19,6 +19,11 @@ class Voice(BaseModel):
 
 # Initial voices data
 voices = [
+    Voice(provider="azuretts", audio="/assets/Sonia.wav", name="Sonia", model="Neural", id="en-GB-SoniaNeural", languageCode="en-GB", accent="british", gender="female", lowLatency=False),
+    Voice(provider="azuretts", audio="/assets/Ryan.wav", name="Ryan", model="Neural", id="en-GB-RyanNeural", languageCode="en-GB", accent="british", gender="male", lowLatency=False),
+    Voice(provider="azuretts", audio="/assets/Neerja.wav", name="Neerja", model="Neural", id="en-IN-NeerjaNeural", languageCode="en-IN", accent="indian", gender="female", lowLatency=False),
+    Voice(provider="azuretts", audio="/assets/Ava.wav", name="Ava", model="Neural", id="en-US-AvaNeural", languageCode="en-US", accent="american", gender="female", lowLatency=False),
+    Voice(provider="azuretts", audio="/assets/Andrew.wav", name="Andrew", model="Neural", id="en-US-AndrewNeural", languageCode="en-US", accent="american", gender="male", lowLatency=False),
     Voice(provider="polly", audio="/assets/Arthur.mp3", name="Arthur", model="Arthur", id="Arthur", languageCode="en-GB", accent="british", gender="male", lowLatency=False, engine="neural"),
     Voice(provider="polly", audio="/assets/Emma.mp3", name="Emma", model="Emma", id="Emma", languageCode="en-GB", accent="british", gender="female", lowLatency=False, engine="neural"),
     Voice(provider="polly", audio="/assets/Niamh.mp3", name="Niamh", model="Niamh", id="Niamh", languageCode="en-IE", accent="american", gender="female", lowLatency=False, engine="neural"),
