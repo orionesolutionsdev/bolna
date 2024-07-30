@@ -18,6 +18,7 @@ class LLMModel(BaseModel):
 llm_models = [
     LLMModel(library="openai", languages="en,hi,gu,fr,it,es", provider="openai", deprecated=False, json_mode="Yes", model="gpt-3.5-turbo-1106", display_name="gpt-3.5-turbo-1106", family="openai"),
     LLMModel(library="openai", languages="en,hi,gu,fr,it,es", provider="openai", deprecated=False, json_mode="No", model="gpt-3.5-turbo", display_name="gpt-3.5-turbo", family="openai"),
+    LLMModel(library="openai", languages="en,hi,gu,fr,it,es", provider="openai", deprecated=False, json_mode="No", model="gpt-4o-mini", display_name="gpt-4o-mini", family="openai"),
     LLMModel(library="openai", languages="en,hi,gu,fr,it,es", provider="openai", deprecated=False, json_mode="No", model="gpt-4o", display_name="gpt-4o", family="openai"),
     LLMModel(library="openai", languages="en,hi,gu,fr,it,es", provider="openai", deprecated=False, json_mode="No", model="gpt-4", display_name="gpt-4", family="openai"),
     LLMModel(library="openai", languages="en,hi,gu,fr,it,es", provider="openai", deprecated=False, json_mode="No", model="gpt-4-32k", display_name="gpt-4-32k", family="openai"),
