@@ -15,9 +15,16 @@ class Voice(BaseModel):
     audio: str
     gender: str
     lowLatency: bool
+    engine: Optional[str] = None
 
 # Initial voices data
 voices = [
+    Voice(provider="polly", audio="/assets/Arthur.mp3", name="Arthur", model="Arthur", id="Arthur", languageCode="en-GB", accent="british", gender="male", lowLatency=False, engine="neural"),
+    Voice(provider="polly", audio="/assets/Emma.mp3", name="Emma", model="Emma", id="Emma", languageCode="en-GB", accent="british", gender="female", lowLatency=False, engine="neural"),
+    Voice(provider="polly", audio="/assets/Niamh.mp3", name="Niamh", model="Niamh", id="Niamh", languageCode="en-IE", accent="american", gender="female", lowLatency=False, engine="neural"),
+    Voice(provider="polly", audio="/assets/Raveena.mp3", name="Raveena", model="Raveena", id="Raveena", languageCode="en-IN", accent="indian", gender="female", lowLatency=False, engine="standard"),
+    Voice(provider="polly", audio="/assets/Joey.mp3", name="Joey", model="Joey", id="Joey", languageCode="en-US", accent="american", gender="male", lowLatency=False, engine="neural"),
+    Voice(provider="polly", audio="/assets/Danielle.mp3", name="Danielle", model="Danielle", id="Danielle", languageCode="en-US", accent="american", gender="female", lowLatency=False, engine="neural"),
     Voice(provider="deepgram", audio="/assets/Asteria-rY7gFvhj.wav", name="Asteria", model="aura-asteria-en", id="asteria-voice-id", languageCode="en-US", accent="american", gender="female", lowLatency=False),
     Voice(provider="deepgram", audio="/assets/Luna-DCeoeimX.wav", name="Luna", model="aura-luna-en", id="luna-voice-id", languageCode="en-US", accent="american", gender="female", lowLatency=False),
     Voice(provider="deepgram", audio="/assets/Stella-CFXkrlQi.wav", name="Stella", model="aura-stella-en", id="stella-voice-id", languageCode="en-US", accent="american", gender="female", lowLatency=False),
