@@ -118,16 +118,16 @@ async def get_agent(agent_id: str, header:Request):
 
 
 @router.put("/agent/{agent_id}")
-async def update_agent(agent_id: str, agent_data: AgentModelPrompt, header:Request):
+async def update_agent(agent_id: str, agent_data: CreateAgentPayload, header:Request):
     try:
         user_id = get_user_id_from_Token(header)
         agent_config = db[settings.MONGO_COLLECTION].find_one({"agent_id": agent_id,
                                                                "user_id": user_id
                                                                })
         if agent_config:
-            agent_data_response = agent_data.model_dump()
-            agent_config.update({key: value for key, value in agent_data_response.items()})
-            agent_prompts = agent_data_response.get("agent_prompts")
+            data_for_db = agent_data.agent_config.model_dump()
+            agent_prompts = agent_data.agent_prompts
+            agent_config.update({key: value for key, value in data_for_db.items()})
             stored_prompt_file_path = f"{agent_id}/conversation_details.json"
             asyncio.gather(
                 store_file(file_key=stored_prompt_file_path, file_data=agent_prompts, local=True)

@@ -6,7 +6,9 @@ from endpoints import (
     agent_llm_providers,
     agent_voices,
     agent_executions,
-    agent_batch_calling
+    agent_batch_calling,
+    agent_transcribers,
+    dashboard,
 )
 from bolna.helpers.logger_config import configure_logger
 from bolna.models import *
@@ -31,7 +33,9 @@ for endpoint in [
     agent_llm_providers,
     agent_voices,
     agent_executions,
-    agent_batch_calling
+    agent_batch_calling,
+    agent_transcribers,
+    dashboard
 ]:
     app.include_router(endpoint.router)
 
