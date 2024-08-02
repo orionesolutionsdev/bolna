@@ -127,6 +127,8 @@ async def update_agent(agent_id: str, agent_data: CreateAgentPayload, header:Req
         if agent_config:
             data_for_db = agent_data.agent_config.model_dump()
             agent_prompts = agent_data.agent_prompts
+            data_for_db['updated_at'] = datetime.now().isoformat()
+            data_for_db['agent_prompts'] = agent_prompts
             agent_config.update({key: value for key, value in data_for_db.items()})
             stored_prompt_file_path = f"{agent_id}/conversation_details.json"
             asyncio.gather(
