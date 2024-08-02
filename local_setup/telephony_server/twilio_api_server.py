@@ -36,20 +36,30 @@ twilio_client = Client(twilio_account_sid, twilio_auth_token)
 def populate_ngrok_tunnels():
     response = requests.get("http://ngrok:4040/api/tunnels")  # ngrok interface
     telephony_url, bolna_url = None, None
-
     if response.status_code == 200:
         data = response.json()
-
         for tunnel in data['tunnels']:
             if tunnel['name'] == 'twilio-app':
                 telephony_url = tunnel['public_url']
             elif tunnel['name'] == 'bolna-app':
                 bolna_url = tunnel['public_url'].replace('https:', 'wss:')
-
         return telephony_url, bolna_url
     else:
         print(f"Error: Unable to fetch data. Status code: {response.status_code}")
 
+def populate_urls():
+    telephony_host, bolna_host = None, None
+    if os.getenv("WEBSOCKET_URL"):
+        bolna_host = os.getenv("WEBSOCKET_URL")
+    if os.getenv("APP_CALLBACK_URL"):
+        telephony_host = os.getenv("APP_CALLBACK_URL")
+    if not telephony_host or not bolna_host:
+        telephony_host, bolna_host = populate_ngrok_tunnels()
+    if not telephony_host or not bolna_host:
+        raise Exception("Unable to populate telephony and bolna URLs")
+    print(f"telephony_host: {telephony_host}")
+    print(f"bolna_host: {bolna_host}")
+    return telephony_host, bolna_host
 
 @app.post('/call')
 async def make_call(request: Request):
@@ -72,7 +82,7 @@ async def make_call(request: Request):
         if not call_details or "recipient_phone_number" not in call_details:
             raise HTTPException(status_code=404, detail="Recipient phone number not provided")
 
-        telephony_host, bolna_host = populate_ngrok_tunnels()
+        telephony_host, bolna_host = populate_urls()
 
         print(f'telephony_host: {telephony_host}')
         print(f'bolna_host: {bolna_host}')
