@@ -30,6 +30,8 @@ voices = [
     Voice(provider="polly", audio="/assets/audio/Raveena.mp3", name="Raveena", model="Raveena", id="Raveena", languageCode="en-IN", accent="indian", gender="female", lowLatency=False, engine="standard"),
     Voice(provider="polly", audio="/assets/audio/Joey.mp3", name="Joey", model="Joey", id="Joey", languageCode="en-US", accent="american", gender="male", lowLatency=False, engine="neural"),
     Voice(provider="polly", audio="/assets/audio/Danielle.mp3", name="Danielle", model="Danielle", id="Danielle", languageCode="en-US", accent="american", gender="female", lowLatency=False, engine="neural"),
+    Voice(provider="polly", audio="/assets/audio/Aditi.mp3", name="Aditi", model="Aditi", id="Aditi", languageCode="hi-IN", accent="indian", gender="female", lowLatency=False, engine="standard"),
+    Voice(provider="polly", audio="/assets/audio/Raveena_hindi.mp3", name="Raveena", model="Raveena", id="Raveena", languageCode="hi-IN", accent="indian", gender="female", lowLatency=False, engine="standard"),
     Voice(provider="deepgram", audio="/assets/audio/Asteria-rY7gFvhj.wav", name="Asteria", model="aura-asteria-en", id="asteria-voice-id", languageCode="en-US", accent="american", gender="female", lowLatency=False),
     Voice(provider="deepgram", audio="/assets/audio/Luna-DCeoeimX.wav", name="Luna", model="aura-luna-en", id="luna-voice-id", languageCode="en-US", accent="american", gender="female", lowLatency=False),
     Voice(provider="deepgram", audio="/assets/audio/Stella-CFXkrlQi.wav", name="Stella", model="aura-stella-en", id="stella-voice-id", languageCode="en-US", accent="american", gender="female", lowLatency=False),
@@ -41,8 +43,8 @@ voices = [
     Voice(provider="deepgram", audio="/assets/audio/Angus-Ck3-0iA9.wav", name="Angus", model="aura-angus-en", id="angus-voice-id", languageCode="en-IE", accent="irish", gender="male", lowLatency=False),
     Voice(provider="deepgram", audio="/assets/audio/Orpheus-Ck3-0iA9.wav", name="Orpheus", model="aura-orpheus-en", id="orpheus-voice-id", languageCode="en-US", accent="american", gender="male", lowLatency=False),
     Voice(provider="deepgram", audio="/assets/audio/Helios-Ck3-0iA9.wav", name="Helios", model="aura-helios-en", id="helios-voice-id", languageCode="en-UK", accent="british", gender="male", lowLatency=False),
-    Voice(provider="deepgram", audio="/assets/audio/Angus-Ck3-0iA9.wav", name="Zeus", model="aura-zeus-en", id="zeus-voice-id", languageCode="en-US", accent="american", gender="male", lowLatency=False),
-]
+    Voice(provider="deepgram", audio="/assets/audio/Angus-Ck3-0iA9.wav", name="Zeus", model="aura-zeus-en", id="zeus-voice-id", languageCode="en-US", accent="american", gender="male", lowLatency=False)
+   ]
 
 @router.get("/voices", response_model=List[Voice])
 def get_voices():
