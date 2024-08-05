@@ -6,7 +6,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg
 COPY ./requirements.txt /app
 RUN --mount=type=cache,target=/root/.cache/pip pip install -r requirements.txt
-COPY quickstart_server.py config.py /app
+COPY quickstart_server.py config.py /app/
 COPY endpoints /app/endpoints
 COPY vo_utils /app/vo_utils
 COPY ambient_music_files /app/ambient_music_files

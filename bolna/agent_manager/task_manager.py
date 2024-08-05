@@ -248,8 +248,7 @@ class TaskManager(BaseManager):
 
                 self.check_for_completion_prompt = conversation_config.get("call_cancellation_prompt", None)
                 if self.check_for_completion_prompt is not None:
-                    completion_json_format = {"answer": "A simple Yes or No based on if you should cut the phone or not"}
-                    self.check_for_completion_prompt = f"{self.check_for_completion_prompt}\nYour response should be in the following json format\n{completion_json_format}"
+                    self.check_for_completion_prompt = f"{self.check_for_completion_prompt}{completion_json_format}"
                 self.check_for_completion_llm = os.getenv("CHECK_FOR_COMPLETION_LLM")
                 self.time_since_last_spoken_human_word = 0 
 

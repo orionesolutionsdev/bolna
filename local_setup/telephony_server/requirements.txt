@@ -29,6 +29,7 @@ MarkupSafe==2.1.5
 mdurl==0.1.2
 motor==3.4.0
 multidict==6.0.5
+plivo==4.55.1
 pydantic==2.8.2
 pydantic-settings==2.3.0
 pydantic_core==2.20.1
