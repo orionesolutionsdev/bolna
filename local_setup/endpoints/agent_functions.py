@@ -48,6 +48,9 @@ class CreateAgentPayload(BaseModel):
 async def create_agent(agent_data: CreateAgentPayload, header:Request):
     agent_uuid = str(uuid.uuid4())
     user_id = get_user_id_from_Token(header)
+    for task in agent_data.agent_config.tasks:
+        if task.task_type == "conversation" and task.task_config.hangup_after_LLMCall and not task.task_config.call_cancellation_prompt:
+            task.task_config.call_cancellation_prompt = CHECK_FOR_COMPLETION_PROMPT
     data_for_db = agent_data.agent_config.model_dump()
     data_for_db["assistant_status"] = "seeding"
     agent_prompts = agent_data.agent_prompts
@@ -125,6 +128,9 @@ async def update_agent(agent_id: str, agent_data: CreateAgentPayload, header:Req
                                                                "user_id": user_id
                                                                })
         if agent_config:
+            for task in agent_data.agent_config.tasks:
+                if task.task_type == "conversation" and task.task_config.hangup_after_LLMCall and not task.task_config.call_cancellation_prompt:
+                    task.task_config.call_cancellation_prompt = CHECK_FOR_COMPLETION_PROMPT
             data_for_db = agent_data.agent_config.model_dump()
             agent_prompts = agent_data.agent_prompts
             data_for_db['updated_at'] = datetime.now().isoformat()

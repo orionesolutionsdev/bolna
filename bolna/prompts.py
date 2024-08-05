@@ -16,19 +16,20 @@ SUMMARIZATION_PROMPT = """
 Given this transcript from the communication between user and an agent your task is to summarize the conversation.
 """
 
-completion_json_format = {"answer": "A simple Yes or No based on if you should cut the phone or not"}
+completion_json_format = """
+Your response should be in the following json format
+### JSON FORMAT
+{"answer": "A simple Yes or No based on if you should cut the phone or not"}
+e.g. {"answer": "Yes"}
+{"answer": "No"}"""
 
-CHECK_FOR_COMPLETION_PROMPT = """
-You are an helpful AI assistant that's having a conversation with customer on a phone call. 
-Based on the given transcript, should you cut the call?\n\n 
+CHECK_FOR_COMPLETION_PROMPT = """You are an helpful AI assistant that's having a conversation with customer on a phone call. 
+Based on the given transcript, should you cut the call?
+
 RULES: 
 1. If user is not interested in talking, or is annoyed or is angry we might need to cut the phone. 
 2. You are also provided with original prompt use the content of original prompt to make your decision. For example if the purpose of the phone call is done and we have all the required content we need to cut the call.
-
-### JSON Structure
-{}
-
-""".format(completion_json_format)
+"""
 
 EXTRACTION_PROMPT_GENERATION_PROMPT = """
 I've asked user to explain in English what data would they like to extract from the conversation. A user will write in points and your task is to form a JSON by converting every point into a respective key value pair.
