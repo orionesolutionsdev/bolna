@@ -22,12 +22,16 @@ voices = [
     Voice(provider="azuretts", audio="/assets/audio/Sonia.wav", name="Sonia", model="Neural", id="en-GB-SoniaNeural", languageCode="en-GB", accent="british", gender="female", lowLatency=False),
     Voice(provider="azuretts", audio="/assets/audio/Ryan.wav", name="Ryan", model="Neural", id="en-GB-RyanNeural", languageCode="en-GB", accent="british", gender="male", lowLatency=False),
     Voice(provider="azuretts", audio="/assets/audio/Neerja.wav", name="Neerja", model="Neural", id="en-IN-NeerjaNeural", languageCode="en-IN", accent="indian", gender="female", lowLatency=False),
+    Voice(provider="azuretts", audio="/assets/audio/Kavya.wav", name="Kavya", model="Neural", id="hi-IN-KavyaNeural", languageCode="hi-IN", accent="indian", gender="female", lowLatency=False),
+    Voice(provider="azuretts", audio="/assets/audio/Kunal.wav", name="Kunal", model="Neural", id="hi-IN-KunalNeural", languageCode="hi-IN", accent="indian", gender="female", lowLatency=False),
     Voice(provider="azuretts", audio="/assets/audio/Ava.wav", name="Ava", model="Neural", id="en-US-AvaNeural", languageCode="en-US", accent="american", gender="female", lowLatency=False),
     Voice(provider="azuretts", audio="/assets/audio/Andrew.wav", name="Andrew", model="Neural", id="en-US-AndrewNeural", languageCode="en-US", accent="american", gender="male", lowLatency=False),
     Voice(provider="polly", audio="/assets/audio/Arthur.mp3", name="Arthur", model="Arthur", id="Arthur", languageCode="en-GB", accent="british", gender="male", lowLatency=False, engine="neural"),
     Voice(provider="polly", audio="/assets/audio/Emma.mp3", name="Emma", model="Emma", id="Emma", languageCode="en-GB", accent="british", gender="female", lowLatency=False, engine="neural"),
     Voice(provider="polly", audio="/assets/audio/Niamh.mp3", name="Niamh", model="Niamh", id="Niamh", languageCode="en-IE", accent="american", gender="female", lowLatency=False, engine="neural"),
     Voice(provider="polly", audio="/assets/audio/Raveena.mp3", name="Raveena", model="Raveena", id="Raveena", languageCode="en-IN", accent="indian", gender="female", lowLatency=False, engine="standard"),
+    Voice(provider="polly", audio="/assets/audio/Kajal.mp3", name="Kajal", model="Kajal", id="Kajal", languageCode="hi-IN", accent="indian", gender="female", lowLatency=False, engine="neural"),
+    Voice(provider="polly", audio="/assets/audio/Aditi.mp3", name="Aditi", model="Aditi", id="Aditi", languageCode="hi-IN", accent="indian", gender="female", lowLatency=False, engine="standard"),
     Voice(provider="polly", audio="/assets/audio/Joey.mp3", name="Joey", model="Joey", id="Joey", languageCode="en-US", accent="american", gender="male", lowLatency=False, engine="neural"),
     Voice(provider="polly", audio="/assets/audio/Danielle.mp3", name="Danielle", model="Danielle", id="Danielle", languageCode="en-US", accent="american", gender="female", lowLatency=False, engine="neural"),
     Voice(provider="polly", audio="/assets/audio/Aditi.mp3", name="Aditi", model="Aditi", id="Aditi", languageCode="hi-IN", accent="indian", gender="female", lowLatency=False, engine="standard"),
@@ -56,7 +60,3 @@ def get_voice(voice_id: str):
     if voice is None:
         raise HTTPException(status_code=404, detail="Voice not found")
     return voice
-
-
-
-

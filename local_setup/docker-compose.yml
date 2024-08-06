@@ -1,8 +1,24 @@
-services:
+version: '3'
 
-  # main bolna service
+x-logging: &default-logging
+  driver: loki
+  options:
+    loki-url: "http://localhost:3100/loki/api/v1/push"
+
+services:
+  twilio-app:
+    build:
+      context: .
+      dockerfile: dockerfiles/twilio_server.Dockerfile
+    ports:
+      - "8001:8001"
+    depends_on:
+      - redis
+    env_file:
+      - .env
+    logging: *default-logging
+
   bolna-app:
-    image: bolna-app:latest
     build:
       context: .
       dockerfile: dockerfiles/bolna_server.Dockerfile
@@ -16,23 +32,12 @@ services:
       - ../agent_data:/app/agent_data
       - $HOME/.aws/credentials:/root/.aws/credentials:ro
       - $HOME/.aws/config:/root/.aws/config:ro
-    develop:
-      watch:
-        - action: sync+restart
-          path: .
-          target: /app
-          ignore:
-            - requirements.txt
-            - telephony_server/
-            - dockerfile/
+    logging: *default-logging
 
-  # redis service used as a persistent storage
   redis:
-    image: redis:latest
-    ports:
-      - "6379:6379"
+    image: "redis:latest"
 
-  # ngrok for local tunneling
+
   ngrok:
     image: ngrok/ngrok:latest
     restart: unless-stopped
@@ -45,21 +50,7 @@ services:
       - ./ngrok-config.yml:/etc/ngrok.yml
     ports:
       - 4040:4040
-
-  ### Telephony servers ###
-  twilio-app:
-    image: twilio-app:latest
-    build:
-      context: .
-      dockerfile: dockerfiles/twilio_server.Dockerfile
-    ports:
-      - "8001:8001"
-    depends_on:
-      - redis
-      - ngrok
-      - bolna-app
-    env_file:
-      - .env
+    logging: *default-logging
 
   plivo-app:
     image: plivo-app:latest
@@ -67,8 +58,9 @@ services:
       context: .
       dockerfile: dockerfiles/plivo_server.Dockerfile
     ports:
-      - "8002:8002"
+      - "8010:8002"
     depends_on:
       - redis 
     env_file:
       - .env
+    logging: *default-logging
