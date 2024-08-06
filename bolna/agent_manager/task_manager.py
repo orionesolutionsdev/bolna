@@ -843,11 +843,14 @@ class TaskManager(BaseManager):
                     logger.info(f"Response from the server after call transfer: {response_text}")
                     return
                 
-        response = await trigger_api(url= url, method=method.lower(), param= param, api_token= api_token, **resp)
-        content = f"We did made a function calling for user. We hit the function : {called_fun}, we hit the url {url} and send a {method} request and it returned us the response as given below: {str(response)} \n\n . Kindly understand the above response and convey this response in a context to user."
+        response = await trigger_api(url= url, method=method.lower(), param= param, api_token= api_token, meta_info = meta_info, run_id = self.run_id, **resp)
+        content = FUNCTION_CALL_PROMPT.format(called_fun, method, str(response))
         model_args["messages"].append({"role":"system","content":content})
         logger.info(f"Logging function call parameters ")
+        convert_to_request_log(str(response), meta_info , None, "function_call", direction = "response", is_cached= False, run_id = self.run_id)
+
         convert_to_request_log(format_messages(model_args['messages'], True), meta_info, self.llm_config['model'], "llm", direction = "request", is_cached= False, run_id = self.run_id)
+        self.toggle_blank_filler_message = True
         if called_fun != "transfer_call":
             await self.__do_llm_generation(model_args["messages"], meta_info, next_step, should_trigger_function_call = True)
             
