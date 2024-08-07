@@ -10,7 +10,7 @@ class TranscriberRes(Transcriber):
 # Initial transcribers data
 transcribers = [
     TranscriberRes(sampling_rate=16000, endpointing=400, keywords="", stream=True, model="nova-2-general", language="en", encoding="linear16", provider="deepgram", task="transcribe", id="nova-2-general"),
-    TranscriberRes(sampling_rate=16000, endpointing=400, keywords="", stream=True, model="nova-2-general", language="hi", encoding="linear16", provider="deepgram", task="transcribe", id="nova-2-hi-general"),
+    TranscriberRes(sampling_rate=16000, endpointing=400, keywords="", stream=True, model="nova-2-hi-general", language="hi", encoding="linear16", provider="deepgram", task="transcribe", id="nova-2-hi-general"),
     TranscriberRes(sampling_rate=16000, endpointing=400, keywords="", stream=True, model="nova-2-meeting", language="en", encoding="linear16", provider="deepgram", task="transcribe", id="nova-2-meeting"),
     TranscriberRes(sampling_rate=16000, endpointing=400, keywords="", stream=True, model="nova-2-phonecall", language="en", encoding="linear16", provider="deepgram", task="transcribe", id="nova-2-phonecall"),
     TranscriberRes(sampling_rate=16000, endpointing=400, keywords="", stream=True, model="nova-2-voicemail", language="en", encoding="linear16", provider="deepgram", task="transcribe", id="nova-2-voicemail"),
