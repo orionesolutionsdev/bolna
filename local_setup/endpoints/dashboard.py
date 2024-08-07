@@ -87,28 +87,18 @@ def get_dashboard_data(
         for exec in execs:
             total_calls += 1
             average_call_duration += exec["conversation_time"]
-        # Get date of Monday of the current week
-        # Get the date of the current day
         today = datetime.datetime.now()
         today = today.replace(hour=0, minute=0, second=0, microsecond=0)
         monday = today - datetime.timedelta(days=today.weekday())
-        # Get the date of the current day
         day = today.strftime("%a")
-        print(day, monday, today)
-        # 2024-07-30T12:43:45.723812
-        # convert today and monday to the following format 2024-07-30T12:43:45.723812
         execs = db[settings.EXECUTION_COLLECTION].find({"agent_id": doc["agent_id"], "created_at": {"$gte": monday.strftime("%Y-%m-%dT%H:%M:%S.%f")}}, {"conversation_time": 1, "created_at": 1}).sort("created_at", 1)
-        # print(list(execs))
         for i, data in enumerate(week_data):
             if data.name == day:
                 for exec in execs:
-                    print(exec)
                     created_at = datetime.datetime.strptime(exec["created_at"], "%Y-%m-%dT%H:%M:%S.%f")
                     if created_at >= monday and created_at < monday + datetime.timedelta(days=1 + i):
                         data.outbound += 1
                 break
-        
-            
         date_4_weeks_ago = monday - datetime.timedelta(days=21)
         for week in call_duration_data:
             num_calls = 0

@@ -164,7 +164,8 @@ class AssistantManager(BaseManager):
                 extracted_data =  task_output["extracted_data"]
                 result["extracted_data"] = extracted_data
                 input_parameters["extraction_details"] = result
-        result["recording_path"] = download_and_upload_to_s3(result.get("call_sid", None))
+        if result and result.get("call_sid", None):
+            result["recording_path"] = download_and_upload_to_s3(result.get("call_sid", None))
         logger.info("Updating Execution Information in MongoDB")
         db['execution_metadata'].insert_one(result)
         logger.info("Done Updating Execution Information in MongoDB")
