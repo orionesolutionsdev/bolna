@@ -1,4 +1,4 @@
-bolna @ git+https://github.com/orionesolutionsdev/bolna@development
+bolna @ git+https://github.com/orionesolutionsdev/bolna@335f47ba
 pymongo==4.7.2
 pydantic-settings==2.2.1
 motor==3.4.0
