@@ -85,7 +85,6 @@ class Transcriber(BaseModel):
 
     @validator("provider")
     def validate_model(cls, value):
-        print(f"value {value}, PROVIDERS {list(SUPPORTED_TRANSCRIBER_PROVIDERS.keys())}")
         return validate_attribute(value, list(SUPPORTED_TRANSCRIBER_PROVIDERS.keys()))
 
     @validator("language")
